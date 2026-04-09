@@ -94,7 +94,7 @@
     /* === TABS === */
     .tab-bar { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #334155; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .tab-bar::-webkit-scrollbar { display: none; }
-    .tab { padding: 0.65rem 1rem; cursor: pointer; color: #64748b; font-weight: 500; font-size: 0.85rem; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; white-space: nowrap; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .tab { padding: 0.65rem 1rem; cursor: pointer; color: #64748b; font-weight: 500; font-size: 0.85rem; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; white-space: nowrap; user-select: none; -webkit-tap-highlight-color: transparent; min-height: 44px; display: inline-flex; align-items: center; }
     .tab:hover { color: #94a3b8; } .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
     .tab-content { display: none; } .tab-content.active { display: block; }
 
@@ -544,6 +544,20 @@ function renderFirmsTable(firms){const max=firms[0]?.count||1;document.getElemen
 function renderAttorneysTable(atts){const max=atts[0]?.count||1;document.getElementById('attorneys-table').innerHTML=atts.map((a,i)=>`<tr><td>${rankBadge(i)}</td><td><strong>${a.name}</strong></td><td>${a.firm}</td><td>${a.email?`<a href="mailto:${a.email}" style="color:#38bdf8">${a.email}</a>`:'<span style="color:#475569">—</span>'}</td><td>${a.count}</td><td>${badges(a.caseTypes,'badge-blue')}</td><td>${barInline(a.count,max)}</td></tr>`).join('');}
 
 loadReport();
+
+// Resize charts for print layout
+window.addEventListener('beforeprint', () => {
+  document.querySelectorAll('canvas').forEach(c => {
+    const chart = Chart.getChart(c);
+    if (chart) chart.resize();
+  });
+});
+window.addEventListener('afterprint', () => {
+  document.querySelectorAll('canvas').forEach(c => {
+    const chart = Chart.getChart(c);
+    if (chart) chart.resize();
+  });
+});
 </script>
 </body>
 </html>

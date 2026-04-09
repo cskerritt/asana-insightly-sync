@@ -91,6 +91,7 @@
     async function fetchStatus() {
       const res = await fetch('/api/status');
       const data = await res.json();
+      fetchStatus._lastData = data;
       const ind = document.getElementById('indicator');
       const text = document.getElementById('status-text');
 
@@ -156,9 +157,7 @@
       const poll = setInterval(async () => {
         await fetchStatus();
         await fetchHistory();
-        const res = await fetch('/api/status');
-        const data = await res.json();
-        if (!data.running) clearInterval(poll);
+        if (!fetchStatus._lastData?.running) clearInterval(poll);
       }, 3000);
     }
 
