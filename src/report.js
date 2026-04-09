@@ -607,23 +607,23 @@ async function generate() {
   velocityAlerts.sort((a, b) => b.count - a.count);
 
   // === NEW FEATURE 2: Geographic Targeting ===
-  const casesByState = {};
-  const casesByCity = {};
+  const geoByState = {};
+  const geoByCity = {};
   let locatedCount = 0;
   parsed.forEach(p => {
     if (p.location) {
       locatedCount++;
       const st = p.location.state;
-      casesByState[st] = (casesByState[st] || 0) + 1;
+      geoByState[st] = (geoByState[st] || 0) + 1;
       const cityKey = `${p.location.city}, ${st}`;
-      casesByCity[cityKey] = (casesByCity[cityKey] || 0) + 1;
+      geoByCity[cityKey] = (geoByCity[cityKey] || 0) + 1;
     }
   });
-  const topCities = Object.entries(casesByCity)
+  const topCities = Object.entries(geoByCity)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 15)
     .map(([name, count]) => ({ name, count }));
-  const topStates = Object.entries(casesByState)
+  const topStates = Object.entries(geoByState)
     .sort((a, b) => b[1] - a[1])
     .map(([name, count]) => ({ name, count }));
 
