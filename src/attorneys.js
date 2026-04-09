@@ -141,6 +141,130 @@ async function scrapeAvvo(state, practiceAreaSlug) {
   }
 }
 
+// --- Justia Scraper ---
+
+const JUSTIA_SLUG_MAP = {
+  'personal-injury': 'personal-injury',
+  'family-law': 'family-law',
+  'employment-law': 'employment-labor-law',
+  'criminal-defense': 'criminal-law',
+  'business-corporate': 'business-law',
+  'real-estate': 'real-estate-law',
+  'estate-planning': 'estate-planning',
+  'bankruptcy': 'bankruptcy',
+  'immigration': 'immigration-law',
+  'intellectual-property': 'intellectual-property',
+  'tax-law': 'tax-law',
+  'medical-malpractice': 'medical-malpractice',
+  'workers-compensation': 'workers-compensation',
+  'civil-rights': 'civil-rights',
+  'environmental-law': 'environmental-law',
+};
+
+const MAX_JUSTIA_PAGES = 5;
+
+async function scrapeJustia(state, practiceAreaSlug) {
+  const stateSlug = STATE_NAMES[state.toUpperCase()]?.toLowerCase().replace(/\s+/g, '-') || state.toLowerCase();
+  const paSlug = JUSTIA_SLUG_MAP[practiceAreaSlug] || practiceAreaSlug;
+  const baseUrl = `https://www.justia.com/lawyers/${paSlug}/${stateSlug}`;
+
+  let browser;
+  try {
+    browser = await chromium.launch({
+      headless: process.env.NODE_ENV === 'production',
+      args: process.env.NODE_ENV === 'production'
+        ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        : [],
+    });
+
+    const allRecords = [];
+    const page = await browser.newPage();
+
+    for (let pageNum = 1; pageNum <= MAX_JUSTIA_PAGES; pageNum++) {
+      const url = pageNum === 1 ? baseUrl : `${baseUrl}?page=${pageNum}`;
+      log.info(`Navigating to Justia page ${pageNum}: ${url}`);
+
+      await page.goto(url, { waitUntil: 'load', timeout: 30000 });
+
+      try {
+        await page.waitForSelector('a[href*="lawyers.justia.com/lawyer/"]', { timeout: 10000 });
+      } catch {
+        log.warn('Justia: waiting extra time for page...');
+        await page.waitForTimeout(PAGE_LOAD_WAIT);
+      }
+      await page.waitForTimeout(1500);
+
+      const records = await page.evaluate((st) => {
+        const results = [];
+        const seen = new Set();
+        const skip = ['Premium', 'Read More', 'View Profile', 'Email Lawyer', 'View Website', 'Top Rated', 'Call', 'Free Consultation'];
+
+        document.querySelectorAll('a[href*="lawyers.justia.com/lawyer/"]').forEach(link => {
+          const name = link.textContent.trim();
+          const href = link.href;
+
+          // Skip non-name links
+          if (!name || name.length < 4 || seen.has(href) || href.includes('/contact')) return;
+          if (skip.some(s => name.includes(s))) return;
+          if (/^\d/.test(name)) return; // Skip "10/10" ratings
+          seen.add(href);
+
+          const lastSpace = name.lastIndexOf(' ');
+          const firstName = lastSpace > 0 ? name.substring(0, lastSpace).trim() : name;
+          const lastName = lastSpace > 0 ? name.substring(lastSpace + 1).trim() : '';
+          if (!firstName || !lastName) return;
+
+          // Walk up to find phone
+          let card = link.parentElement;
+          for (let i = 0; i < 8; i++) {
+            if (!card) break;
+            if (card.querySelector('a[href^="tel:"]')) break;
+            card = card.parentElement;
+          }
+
+          const phoneEl = card?.querySelector('a[href^="tel:"]');
+          let phone = null;
+          if (phoneEl) {
+            const raw = phoneEl.href.replace('tel:', '').replace(/\+1-?/, '');
+            const match = raw.match(/(\d{3})\D*(\d{3})\D*(\d{4})/);
+            if (match) phone = `(${match[1]}) ${match[2]}-${match[3]}`;
+          }
+
+          results.push({
+            firstName, lastName, phone,
+            firmName: '', firmAddress: null,
+            state: st, practiceAreas: [],
+            source: 'justia', sourceUrl: href,
+          });
+        });
+        return results;
+      }, state.toUpperCase());
+
+      const valid = records.filter(r => r.firstName && r.firstName.trim() && r.lastName && r.lastName.trim());
+      allRecords.push(...valid);
+
+      // Check for next page
+      const hasNext = await page.evaluate(() => {
+        const links = [...document.querySelectorAll('a')];
+        return links.some(a => a.textContent.trim() === 'Next');
+      });
+
+      if (!hasNext) break;
+      if (pageNum < MAX_JUSTIA_PAGES) await sleep(REQUEST_DELAY);
+    }
+
+    log.info(`Scraped ${allRecords.length} attorneys from Justia (${Math.min(MAX_JUSTIA_PAGES, allRecords.length > 0 ? MAX_JUSTIA_PAGES : 1)} pages)`);
+    await browser.close();
+    return allRecords;
+  } catch (err) {
+    log.error('Justia scrape failed', err.message);
+    if (browser) await browser.close().catch(() => {});
+    return [];
+  }
+}
+
+// --- Search Orchestration ---
+
 async function runSearch(state, practiceAreaSlug) {
   const logId = db.createSearchLog(state, practiceAreaSlug, 'avvo');
 
@@ -211,5 +335,5 @@ async function pushToInsightly(attorneyIds) {
 
 module.exports = {
   STATE_NAMES, PRACTICE_AREAS,
-  scrapeAvvo, runSearch, pushToInsightly,
+  scrapeAvvo, scrapeJustia, runSearch, pushToInsightly,
 };

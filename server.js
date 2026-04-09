@@ -169,20 +169,43 @@ app.post('/api/attorneys/search', async (req, res) => {
   }
 
   // Run async — return immediately, search in background
-  const logId = db.createSearchLog(state, practiceArea, 'avvo');
+  const logId = db.createSearchLog(state, practiceArea, 'multi');
   res.json({ message: 'Search started', logId });
 
-  // Background execution (after response sent)
+  // Background execution: scrape both Avvo and Justia sequentially
   try {
     log.info(`Starting attorney search: ${state} / ${practiceArea}`);
-    const records = await attorneys.scrapeAvvo(state, practiceArea);
-    let newCount = 0;
-    for (const record of records) {
-      const result = db.upsertAttorney(record);
-      if (result.created) newCount++;
+    let totalRecords = 0;
+    let totalNew = 0;
+
+    // Scrape Avvo first
+    try {
+      const avvoRecords = await attorneys.scrapeAvvo(state, practiceArea);
+      for (const record of avvoRecords) {
+        const result = db.upsertAttorney(record);
+        if (result.created) totalNew++;
+      }
+      totalRecords += avvoRecords.length;
+      log.info(`Avvo: ${avvoRecords.length} found`);
+    } catch (err) {
+      log.error('Avvo scrape failed, continuing with Justia', err.message);
     }
-    db.updateSearchLog(logId, 'completed', records.length);
-    log.info(`Attorney search complete: ${records.length} found, ${newCount} new`);
+
+    // Then scrape Justia
+    try {
+      const justiaRecords = await attorneys.scrapeJustia(state, practiceArea);
+      for (const record of justiaRecords) {
+        const result = db.upsertAttorney(record);
+        if (result.created) totalNew++;
+      }
+      totalRecords += justiaRecords.length;
+      log.info(`Justia: ${justiaRecords.length} found`);
+    } catch (err) {
+      log.error('Justia scrape failed', err.message);
+    }
+
+    db.updateSearchLog(logId, 'completed', totalRecords);
+    log.info(`Attorney search complete: ${totalRecords} total found, ${totalNew} new`);
   } catch (err) {
     log.error(`Attorney search failed: ${state} / ${practiceArea}`, err.message);
     db.updateSearchLog(logId, 'failed', 0);
