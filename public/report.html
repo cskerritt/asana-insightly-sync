@@ -172,7 +172,7 @@
     <div class="summary-grid" id="summary-grid"></div>
     <div class="tab-bar no-print">
       <div class="tab active" onclick="showTab('ceo',this)">Dan Wolstein — CEO</div>
-      <div class="tab" onclick="showTab('coo',this)">Sharon Hirsh — COO</div>
+      <div class="tab" onclick="showTab('coo',this)">Sharon Hirsch — COO</div>
       <div class="tab" onclick="showTab('marketing',this)">Scott Wolstein — Marketing</div>
       <div class="tab" onclick="showTab('analytics',this)">Full Analytics</div>
     </div>
@@ -271,7 +271,7 @@ function showTab(name,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if(el)el.classList.add('active');
-  const names={ceo:'Report for Dan Wolstein, CEO',coo:'Report for Sharon Hirsh, COO',marketing:'Report for Scott Wolstein, Marketing Director',analytics:'Full Analytics Report'};
+  const names={ceo:'Report for Dan Wolstein, CEO',coo:'Report for Sharon Hirsch, COO',marketing:'Report for Scott Wolstein, Marketing Director',analytics:'Full Analytics Report'};
   document.getElementById('report-for').textContent=names[name]||'';
 }
 
