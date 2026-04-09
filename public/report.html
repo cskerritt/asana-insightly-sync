@@ -60,7 +60,7 @@
     .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .card { background: #1e293b; border-radius: 0.75rem; padding: 1.25rem; border: 1px solid #334155; overflow: hidden; }
     .card h3 { font-size: 0.82rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    .card canvas { max-height: 280px; width: 100% !important; }
+    .card canvas { max-height: 350px; width: 100% !important; }
     .full-width { grid-column: 1 / -1; }
 
     /* === TABLES === */
@@ -412,10 +412,37 @@ async function saveNotes(id,notes){
 }
 
 // === CHART HELPERS ===
-function renderDoughnut(id,data,colorMap){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);new Chart(document.getElementById(id),{type:'doughnut',data:{labels:s.map(x=>x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:colorMap?s.map((x,i)=>colorMap[x[0]]||PALETTE[i%PALETTE.length]):PALETTE,borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{padding:10,usePointStyle:true,font:{size:11}}}}}});}
+function renderDoughnut(id,data,colorMap){
+  const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);
+  const total=s.reduce((sum,x)=>sum+x[1],0);
+  const labels=s.map(x=>{const pct=Math.round(x[1]/total*100);return `${x[0]} (${x[1]} — ${pct}%)`;});
+  new Chart(document.getElementById(id),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:s.map(x=>x[1]),backgroundColor:colorMap?s.map((x,i)=>colorMap[x[0]]||PALETTE[i%PALETTE.length]):PALETTE,borderWidth:0}]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:8,usePointStyle:true,font:{size:11},boxWidth:12,generateLabels:function(chart){
+      return chart.data.labels.map((label,i)=>({text:label,fillStyle:chart.data.datasets[0].backgroundColor[i],hidden:false,index:i,pointStyle:'circle'}));
+    }}}}}
+  });
+}
 function renderBarChart(id,data,filterUnknown){let l=Object.keys(data);if(filterUnknown)l=l.filter(k=>k!=='Unknown');l.sort();new Chart(document.getElementById(id),{type:'bar',data:{labels:l,datasets:[{label:'Cases',data:l.map(k=>data[k]),backgroundColor:'rgba(56,189,248,0.7)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});}
-function renderHorizontalBar(id,data){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(x=>x[0].length>28?x[0].slice(0,28)+'...':x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}}});}
-function renderYearByArea(id,yba){const yrs=Object.keys(yba).filter(y=>y!=='null').sort();const areas=new Set();yrs.forEach(y=>Object.keys(yba[y]).forEach(a=>areas.add(a)));const a=[...areas].filter(x=>x!=='Unknown');const ds=a.map((area,i)=>({label:area,data:yrs.map(y=>yba[y][area]||0),backgroundColor:PALETTE[i%PALETTE.length],borderRadius:4}));new Chart(document.getElementById(id),{type:'bar',data:{labels:yrs,datasets:ds},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true,font:{size:11}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true}}}});}
+function renderHorizontalBar(id,data){
+  const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);
+  // Show full label names — no truncation
+  new Chart(document.getElementById(id),{
+    type:'bar',
+    data:{labels:s.map(x=>x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false},ticks:{font:{size:11},autoSkip:false}}}}
+  });
+  // Set canvas container height based on number of items
+  document.getElementById(id).parentElement.style.minHeight=Math.max(200,s.length*32)+'px';
+}
+function renderYearByArea(id,yba){
+  const yrs=Object.keys(yba).filter(y=>y!=='null').sort();
+  const areas=new Set();yrs.forEach(y=>Object.keys(yba[y]).forEach(a=>areas.add(a)));
+  const a=[...areas].filter(x=>x!=='Unknown');
+  const ds=a.map((area,i)=>({label:area,data:yrs.map(y=>yba[y][area]||0),backgroundColor:PALETTE[i%PALETTE.length],borderRadius:4}));
+  new Chart(document.getElementById(id),{type:'bar',data:{labels:yrs,datasets:ds},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:10,usePointStyle:true,font:{size:11},boxWidth:12}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true}}}});
+}
 function rankBadge(i){return`<span class="rank ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other'}">${i+1}</span>`;}
 function barInline(v,max){return`<div class="bar-inline"><div class="bar-inline-fill" style="width:${max>0?(v/max*100):0}%"></div></div>`;}
 function badges(obj,cls){return Object.entries(obj).filter(([k])=>k!=='Unknown'&&k!=='Not Specified').map(([k,v])=>`<span class="badge ${cls}">${k}: ${v}</span>`).join(' ');}
