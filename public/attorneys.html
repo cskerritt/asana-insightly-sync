@@ -273,8 +273,8 @@
         tbody.innerHTML = data.map(a => `
           <tr>
             <td><input type="checkbox" class="atty-cb" value="${a.id}"></td>
-            <td>${a.source_url ? `<a href="${a.source_url}" target="_blank">${esc(a.name)}</a>` : esc(a.name)}</td>
-            <td>${esc(a.firm || '')}</td>
+            <td>${a.source_url ? `<a href="${a.source_url}" target="_blank">${esc((a.first_name || '') + ' ' + (a.last_name || ''))}</a>` : esc((a.first_name || '') + ' ' + (a.last_name || ''))}</td>
+            <td>${esc(a.firm_name || '')}</td>
             <td>${esc(a.email || '')}</td>
             <td>${esc(a.phone || '')}</td>
             <td>${esc(a.state || '')}</td>
