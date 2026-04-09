@@ -1,11 +1,10 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+const { chromium } = require('playwright');
 const log = require('./logger');
 const db = require('./db');
 const insightly = require('./insightly');
 
-const REQUEST_DELAY = 2500;
-const MAX_PAGES = 20;
+const PAGE_LOAD_WAIT = 8000; // ms to wait for Cloudflare challenge
+const REQUEST_DELAY = 3000;
 
 const STATE_NAMES = {
   AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas',
@@ -49,81 +48,74 @@ async function scrapeAvvo(state, practiceAreaSlug) {
   const stateName = STATE_NAMES[state.toUpperCase()] || state;
   const pa = PRACTICE_AREAS.find(p => p.slug === practiceAreaSlug);
   const query = pa ? pa.query : practiceAreaSlug.replace(/-/g, '+');
-  const baseUrl = `https://www.avvo.com/search/lawyer_search?q=${query}&loc=${stateName}`;
+  const searchUrl = `https://www.avvo.com/search/lawyer_search?q=${query}&loc=${stateName}`;
 
-  const allRecords = [];
-  let url = baseUrl;
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: false });
+    const page = await browser.newPage();
 
-  for (let page = 1; page <= MAX_PAGES; page++) {
-    try {
-      const response = await axios.get(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        timeout: 15000,
+    log.info(`Navigating to Avvo: ${searchUrl}`);
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForTimeout(PAGE_LOAD_WAIT);
+
+    // Extract attorney data from all cards on the page
+    const records = await page.evaluate((st) => {
+      const results = [];
+      document.querySelectorAll('.serp-card').forEach(card => {
+        // Name
+        const nameEl = card.querySelector('.profile-name a');
+        if (!nameEl) return;
+        const fullName = nameEl.textContent.trim();
+        const lastSpace = fullName.lastIndexOf(' ');
+        const firstName = lastSpace > 0 ? fullName.substring(0, lastSpace) : fullName;
+        const lastName = lastSpace > 0 ? fullName.substring(lastSpace + 1) : '';
+
+        // Profile URL — extract real URL from ad redirect if present
+        let sourceUrl = nameEl.getAttribute('href') || '';
+        const urlMatch = sourceUrl.match(/url=([^&]+)/);
+        if (urlMatch) sourceUrl = decodeURIComponent(urlMatch[1]);
+
+        // Phone — extract number from CTA text
+        const phoneEl = card.querySelector('.phone-cta');
+        let phone = null;
+        if (phoneEl) {
+          const phoneMatch = phoneEl.textContent.match(/\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/);
+          if (phoneMatch) phone = phoneMatch[0];
+        }
+
+        // Practice areas from details text
+        const practiceAreas = [];
+        const detailsEl = card.querySelector('.details') || card.querySelector('.body');
+        if (detailsEl) {
+          const text = detailsEl.textContent;
+          const paMatch = text.match(/Practice Areas?:\s*(.+?)(?:\n|$)/);
+          if (paMatch) {
+            paMatch[1].split(',').forEach(p => {
+              const trimmed = p.trim().replace(/\.{3}$/, '');
+              if (trimmed && trimmed.length > 1) practiceAreas.push(trimmed);
+            });
+          }
+        }
+
+        results.push({
+          firstName, lastName, phone,
+          firmName: '', firmAddress: null,
+          state: st, practiceAreas,
+          source: 'avvo', sourceUrl,
+        });
       });
-      const $ = cheerio.load(response.data);
-      const cards = $('.serp-card');
+      return results;
+    }, state.toUpperCase());
 
-      if (cards.length === 0) break;
-
-      cards.each((_, card) => {
-        const record = parseCard($, card, state.toUpperCase());
-        if (record) allRecords.push(record);
-      });
-
-      const nextLink = $('a.pagination-next').attr('href');
-      if (!nextLink) break;
-
-      url = nextLink.startsWith('http') ? nextLink : `https://www.avvo.com${nextLink}`;
-
-      if (page < MAX_PAGES) await sleep(REQUEST_DELAY);
-    } catch (err) {
-      log.error(`Avvo scrape failed for page ${page}`, err.message);
-      break;
-    }
+    log.info(`Scraped ${records.length} attorneys from Avvo`);
+    await browser.close();
+    return records;
+  } catch (err) {
+    log.error('Avvo scrape failed', err.message);
+    if (browser) await browser.close().catch(() => {});
+    return [];
   }
-
-  return allRecords;
-}
-
-function parseCard($, card, state) {
-  const $card = $(card);
-
-  const nameEl = $card.find("[itemprop='name']").first();
-  if (!nameEl.length) return null;
-  const fullName = nameEl.text().trim();
-  const lastSpace = fullName.lastIndexOf(' ');
-  const firstName = lastSpace > 0 ? fullName.substring(0, lastSpace) : fullName;
-  const lastName = lastSpace > 0 ? fullName.substring(lastSpace + 1) : '';
-
-  const firmEl = $card.find("[itemprop='worksFor']").first();
-  const firmName = firmEl.length ? firmEl.text().trim() : '';
-
-  const phoneEl = $card.find('a.phone-cta').first();
-  const phone = phoneEl.length ? phoneEl.text().trim() : null;
-
-  const addrParts = [];
-  for (const field of ['streetAddress', 'addressLocality', 'addressRegion', 'postalCode']) {
-    const el = $card.find(`[itemprop='${field}']`).first();
-    if (el.length) addrParts.push(el.text().trim());
-  }
-  const firmAddress = addrParts.length > 0 ? addrParts.join(', ') : null;
-
-  const linkEl = $card.find('a.header').first();
-  let sourceUrl = '';
-  if (linkEl.length) {
-    const href = linkEl.attr('href') || '';
-    sourceUrl = href.startsWith('http') ? href : `https://www.avvo.com${href}`;
-  }
-
-  const practiceAreas = [];
-  $card.find('.practice-areas li').each((_, li) => {
-    practiceAreas.push($(li).text().trim());
-  });
-
-  return {
-    firstName, lastName, phone, firmName, firmAddress, state,
-    practiceAreas, source: 'avvo', sourceUrl,
-  };
 }
 
 async function runSearch(state, practiceAreaSlug) {
