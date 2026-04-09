@@ -63,8 +63,18 @@ async function scrapeAvvo(state, practiceAreaSlug) {
     const page = await browser.newPage();
 
     log.info(`Navigating to Avvo: ${searchUrl}`);
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(PAGE_LOAD_WAIT);
+    await page.goto(searchUrl, { waitUntil: 'load', timeout: 30000 });
+
+    // Wait for attorney cards to actually render with names
+    try {
+      await page.waitForSelector('.serp-card .profile-name a', { timeout: 15000 });
+    } catch {
+      // Fallback: may still be on Cloudflare challenge page
+      log.warn('Waiting extra time for page to load...');
+      await page.waitForTimeout(PAGE_LOAD_WAIT);
+    }
+    // Extra buffer for remaining cards to populate
+    await page.waitForTimeout(2000);
 
     // Extract attorney data from all cards on the page
     const records = await page.evaluate((st) => {
@@ -115,9 +125,15 @@ async function scrapeAvvo(state, practiceAreaSlug) {
       return results;
     }, state.toUpperCase());
 
-    log.info(`Scraped ${records.length} attorneys from Avvo`);
+    // Filter out any records with empty names (page didn't fully render)
+    const validRecords = records.filter(r => r.firstName && r.firstName.trim());
+    if (validRecords.length < records.length) {
+      log.warn(`Filtered out ${records.length - validRecords.length} records with empty names`);
+    }
+
+    log.info(`Scraped ${validRecords.length} attorneys from Avvo`);
     await browser.close();
-    return records;
+    return validRecords;
   } catch (err) {
     log.error('Avvo scrape failed', err.message);
     if (browser) await browser.close().catch(() => {});
