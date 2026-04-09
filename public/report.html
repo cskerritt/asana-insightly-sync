@@ -174,6 +174,7 @@
       <div class="tab active" onclick="showTab('ceo',this)">Dan Wolstein — CEO</div>
       <div class="tab" onclick="showTab('coo',this)">Sharon Hirsch — COO</div>
       <div class="tab" onclick="showTab('marketing',this)">Scott Wolstein — Marketing</div>
+      <div class="tab" onclick="showTab('productivity',this)">Team Productivity</div>
       <div class="tab" onclick="showTab('analytics',this)">Full Analytics</div>
     </div>
 
@@ -230,6 +231,31 @@
         <div class="checklist-stats" id="checklist-stats"></div>
       </div>
       <div id="checklist"></div>
+    </div>
+
+    <!-- TEAM PRODUCTIVITY -->
+    <div id="tab-productivity" class="tab-content">
+      <div class="section-title">Team Workload &amp; Performance</div>
+      <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:1rem;">How each team member is performing based on Asana task data. Click any row to see details.</p>
+      <div class="ceo-kpi" id="prod-kpis"></div>
+      <div class="section">
+        <div class="card"><div class="table-wrap"><table id="prod-table">
+          <thead><tr>
+            <th>Team Member</th>
+            <th>Open</th>
+            <th>Done</th>
+            <th>Overdue</th>
+            <th>Due Soon</th>
+            <th>Avg Days</th>
+            <th>Last 30d</th>
+            <th>Rate</th>
+            <th>Concerns</th>
+          </tr></thead>
+          <tbody id="prod-tbody"></tbody>
+        </table></div></div>
+      </div>
+      <div id="prod-detail" style="display:none;margin-top:1.5rem;"></div>
+      <div id="prod-loading" class="loading"><div class="spinner"></div>Loading team data from Asana...</div>
     </div>
 
     <!-- FULL ANALYTICS -->
@@ -309,7 +335,7 @@ function showTab(name,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if(el)el.classList.add('active');
-  const names={ceo:'Report for Dan Wolstein, CEO',coo:'Report for Sharon Hirsch, COO',marketing:'Report for Scott Wolstein, Marketing Director',analytics:'Full Analytics Report'};
+  const names={ceo:'Report for Dan Wolstein, CEO',coo:'Report for Sharon Hirsch, COO',marketing:'Report for Scott Wolstein, Marketing Director',productivity:'Team Productivity — Sharon Hirsch, COO',analytics:'Full Analytics Report'};
   document.getElementById('report-for').textContent=names[name]||'';
 }
 
@@ -455,6 +481,119 @@ async function saveNotes(id,notes){
   const item=actionItems.find(i=>i.id===id);
   if(item)item.notes=notes;
 }
+
+// === PRODUCTIVITY TAB ===
+let prodData=null;
+async function loadProductivity(){
+  document.getElementById('prod-loading').style.display='block';
+  try{
+    const res=await fetch('/api/productivity');
+    prodData=await res.json();
+    document.getElementById('prod-loading').style.display='none';
+    renderProductivity();
+  }catch(e){
+    document.getElementById('prod-loading').innerHTML='<p style="color:#ef4444">Failed to load: '+e.message+'</p>';
+  }
+}
+
+function renderProductivity(){
+  if(!prodData)return;
+  const s=prodData.summary;
+  document.getElementById('prod-kpis').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">Team Members</div><div class="kpi-value">${s.totalMembers}</div><div class="kpi-sub">With assigned tasks</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Open Tasks</div><div class="kpi-value">${s.totalOpen}</div><div class="kpi-sub">Across all team members</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Overdue</div><div class="kpi-value" style="${s.totalOverdue>10?'color:#ef4444':''}">${s.totalOverdue}</div><div class="kpi-sub">Tasks past their due date</div></div>
+    <div class="kpi-card"><div class="kpi-label">Team Avg Completion</div><div class="kpi-value">${s.teamAvgDays} days</div><div class="kpi-sub">Average time to finish a task</div></div>
+  `;
+
+  const tbody=document.getElementById('prod-tbody');
+  tbody.innerHTML=prodData.team.map((m,i)=>{
+    const rowClass=m.hasConcerns?'style="background:rgba(239,68,68,0.05)"':'';
+    const concernBadges=m.concerns.map(c=>`<span class="badge badge-red">${c}</span>`).join(' ');
+    return `<tr ${rowClass} onclick="showProdDetail(${i})" style="cursor:pointer">
+      <td><strong>${m.name}</strong><br><span style="color:#64748b;font-size:0.72rem">${m.email}</span></td>
+      <td>${m.open}</td>
+      <td>${m.completed}</td>
+      <td style="${m.overdue>=3?'color:#ef4444;font-weight:600':''}">${m.overdue}</td>
+      <td>${m.dueSoon}</td>
+      <td style="${m.avgDays>120?'color:#f59e0b;font-weight:600':''}">${m.avgDays}</td>
+      <td style="${m.completed30===0&&m.open>0?'color:#ef4444;font-weight:600':''}">${m.completed30}</td>
+      <td>${m.completionRate}%</td>
+      <td>${concernBadges||'<span style="color:#22c55e">OK</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function showProdDetail(idx){
+  const m=prodData.team[idx];
+  const el=document.getElementById('prod-detail');
+  el.style.display='block';
+  el.scrollIntoView({behavior:'smooth'});
+
+  // Monthly trend
+  const months=Object.keys(m.monthlyCompleted).sort().slice(-6);
+
+  let overdueHtml='';
+  if(m.overdueList.length){
+    overdueHtml=`<div class="section" style="margin-top:1rem">
+      <h3 style="color:#ef4444;font-size:0.9rem;margin-bottom:0.5rem">Overdue Tasks</h3>
+      ${m.overdueList.map(t=>`<div class="action-card cold" style="padding:0.75rem 1rem">
+        <strong>${t.name}</strong> — due ${t.dueOn} <span class="badge badge-red">${t.daysOverdue} days overdue</span>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  let projectHtml='';
+  const projects=Object.entries(m.byProject).sort((a,b)=>b[1].total-a[1].total);
+  if(projects.length){
+    projectHtml=`<div class="section" style="margin-top:1rem">
+      <h3 style="color:#94a3b8;font-size:0.9rem;margin-bottom:0.5rem">Tasks by Project</h3>
+      <div class="table-wrap"><table style="min-width:300px">
+        <thead><tr><th>Project</th><th>Total</th><th>Done</th><th>Open</th></tr></thead>
+        <tbody>${projects.map(([p,d])=>`<tr><td>${p}</td><td>${d.total}</td><td>${d.completed}</td><td>${d.open}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  el.innerHTML=`
+    <div class="card">
+      <h3 style="font-size:1rem;color:#f8fafc;text-transform:none;letter-spacing:0">${m.name} — Detailed View
+        <button class="btn btn-secondary no-print" style="float:right;font-size:0.75rem" onclick="document.getElementById('prod-detail').style.display='none'">Close</button>
+      </h3>
+      <div class="ceo-kpi" style="margin-top:1rem">
+        <div class="kpi-card"><div class="kpi-label">Open Tasks</div><div class="kpi-value">${m.open}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Completed</div><div class="kpi-value">${m.completed}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Overdue</div><div class="kpi-value" style="${m.overdue>0?'color:#ef4444':''}">${m.overdue}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg Days to Complete</div><div class="kpi-value">${m.avgDays}</div><div class="kpi-sub">Median: ${m.medianDays} days</div></div>
+        <div class="kpi-card"><div class="kpi-label">Last 30 Days</div><div class="kpi-value">${m.completed30}</div><div class="kpi-sub">tasks completed</div></div>
+        <div class="kpi-card"><div class="kpi-label">Last 90 Days</div><div class="kpi-value">${m.completed90}</div><div class="kpi-sub">tasks completed</div></div>
+      </div>
+      ${m.concerns.length?`<div class="exec-insight" style="border-left:3px solid #ef4444"><div class="label" style="color:#ef4444">Concerns</div><div class="text">${m.concerns.join(' &bull; ')}</div></div>`:''}
+      <div class="card" style="margin-top:1rem;background:#0f172a"><h3>Monthly Completions (Last 6 Months)</h3><canvas id="prod-chart-${idx}" style="max-height:200px"></canvas></div>
+      ${overdueHtml}
+      ${projectHtml}
+    </div>
+  `;
+
+  // Render monthly chart
+  if(months.length){
+    new Chart(document.getElementById('prod-chart-'+idx),{
+      type:'bar',
+      data:{
+        labels:months.map(k=>{const[y,mo]=k.split('-');return new Date(y,mo-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});}),
+        datasets:[{label:'Completed',data:months.map(k=>m.monthlyCompleted[k]||0),backgroundColor:'rgba(56,189,248,0.7)',borderRadius:6,borderSkipped:false}]
+      },
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}
+    });
+  }
+}
+
+// Load productivity when tab is clicked
+const origShowTab=showTab;
+showTab=function(name,el){
+  origShowTab(name,el);
+  if(name==='productivity'&&!prodData) loadProductivity();
+};
 
 // === NEW ANALYTICS RENDERERS ===
 function renderGeographic(geo) {

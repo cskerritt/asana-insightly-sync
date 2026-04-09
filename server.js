@@ -46,6 +46,20 @@ app.get('/api/history', (req, res) => {
   res.json(db.getHistory(limit));
 });
 
+// API: team productivity — fetches from Asana
+const productivity = require('./src/productivity');
+productivity.init(process.env.ASANA_TOKEN);
+
+app.get('/api/productivity', async (req, res) => {
+  try {
+    const data = await productivity.generate();
+    res.json(data);
+  } catch (err) {
+    log.error('Productivity report failed', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // API: report data — fetches from Insightly for reporting
 const report = require('./src/report');
 app.get('/api/report', async (req, res) => {
