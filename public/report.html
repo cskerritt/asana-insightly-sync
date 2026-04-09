@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Business Development Report — KWVRS</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; color: #1a1a2e !important; font-size: 11px; }
+      .page-break { page-break-before: always; }
+      .card { box-shadow: none !important; border: 1px solid #ddd !important; background: white !important; }
+      .summary-card { background: #f8f9fa !important; border: 1px solid #ddd !important; }
+      .summary-card .value { background: none !important; -webkit-text-fill-color: #1a1a2e !important; color: #1a1a2e !important; }
+      .header { background: white !important; border-bottom: 2px solid #1a1a2e !important; }
+      .header h1, .section-title { color: #1a1a2e !important; }
+      .header h1 span { color: #2563eb !important; }
+      th { color: #333 !important; }
+      td { color: #444 !important; }
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-bottom: 1px solid #334155;
+      padding: 2rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 1.75rem; font-weight: 700; color: #f8fafc; }
+    .header h1 span { color: #38bdf8; font-weight: 400; }
+    .header-sub { color: #64748b; font-size: 0.85rem; margin-top: 0.25rem; }
+    .header-meta { text-align: right; color: #64748b; font-size: 0.85rem; }
+    .header-meta .date { color: #94a3b8; font-size: 1rem; }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .summary-card {
+      background: #1e293b;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      text-align: center;
+      border: 1px solid #334155;
+    }
+    .summary-card .value {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .summary-card .label {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+    .summary-card.highlight .value {
+      background: linear-gradient(135deg, #22c55e, #34d399);
+      -webkit-background-clip: text;
+    }
+
+    .section { margin-bottom: 2.5rem; }
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #f8fafc;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #334155;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      border: 1px solid #334155;
+    }
+    .card h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .card canvas { max-height: 300px; }
+    .full-width { grid-column: 1 / -1; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      border-bottom: 2px solid #334155;
+    }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+    tr:hover td { background: rgba(56, 189, 248, 0.04); }
+
+    .rank {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 50%;
+      font-size: 0.7rem; font-weight: 700;
+    }
+    .rank-1 { background: #fbbf24; color: #1a1a2e; }
+    .rank-2 { background: #94a3b8; color: #1a1a2e; }
+    .rank-3 { background: #cd7f32; color: #1a1a2e; }
+    .rank-other { background: #334155; color: #94a3b8; }
+
+    .badge {
+      display: inline-block; padding: 0.15rem 0.55rem; border-radius: 9999px;
+      font-size: 0.7rem; font-weight: 600;
+    }
+    .badge-blue { background: #1e3a5f; color: #38bdf8; }
+    .badge-green { background: #064e3b; color: #34d399; }
+    .badge-red { background: #450a0a; color: #fca5a5; }
+    .badge-yellow { background: #422006; color: #fbbf24; }
+    .badge-purple { background: #2e1065; color: #a78bfa; }
+
+    .bar-inline { height: 8px; border-radius: 4px; background: #334155; min-width: 60px; }
+    .bar-inline-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #38bdf8, #818cf8); }
+
+    .action-card {
+      background: #1e293b; border: 1px solid #334155;
+      border-left: 4px solid #38bdf8; border-radius: 0 0.75rem 0.75rem 0;
+      padding: 1.25rem; margin-bottom: 1rem;
+    }
+    .action-card h4 { color: #f8fafc; font-size: 0.95rem; margin-bottom: 0.5rem; }
+    .action-card p { color: #94a3b8; font-size: 0.85rem; }
+    .action-card.cold { border-left-color: #ef4444; }
+    .action-card.new { border-left-color: #22c55e; }
+
+    .btn {
+      padding: 0.5rem 1.25rem; border: none; border-radius: 0.375rem;
+      cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: background 0.2s;
+      text-decoration: none; display: inline-block;
+    }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-secondary { background: #334155; color: #e2e8f0; }
+    .btn-secondary:hover { background: #475569; }
+
+    .loading { text-align: center; padding: 4rem; color: #64748b; font-size: 1.1rem; }
+    .loading .spinner {
+      width: 40px; height: 40px; border: 3px solid #334155; border-top-color: #38bdf8;
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .tab-bar { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 2px solid #334155; }
+    .tab {
+      padding: 0.75rem 1.5rem; cursor: pointer; color: #64748b; font-weight: 500;
+      border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s;
+    }
+    .tab:hover { color: #94a3b8; }
+    .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Business Development <span>Report</span></h1>
+    <div class="header-sub">Referral Analytics &mdash; Asana &rarr; Insightly</div>
+  </div>
+  <div class="header-meta">
+    <div class="date" id="report-date"></div>
+    <div class="no-print" style="margin-top: 0.5rem;">
+      <button class="btn btn-secondary" onclick="window.print()">Print / Export PDF</button>
+      <a href="/" class="btn btn-secondary">Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    Generating report from Insightly data...
+  </div>
+
+  <div id="report" style="display:none;">
+
+    <div class="summary-grid" id="summary-grid"></div>
+
+    <div class="tab-bar no-print">
+      <div class="tab active" onclick="showTab('overview')">Overview</div>
+      <div class="tab" onclick="showTab('cases')">Case Analysis</div>
+      <div class="tab" onclick="showTab('firms')">Firms</div>
+      <div class="tab" onclick="showTab('attorneys')">Attorneys</div>
+      <div class="tab" onclick="showTab('actions')">Marketing Actions</div>
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div id="tab-overview" class="tab-content active">
+      <div class="charts-grid">
+        <div class="card">
+          <h3>Cases by Area</h3>
+          <canvas id="chart-area"></canvas>
+        </div>
+        <div class="card">
+          <h3>Service Types Provided</h3>
+          <canvas id="chart-service"></canvas>
+        </div>
+        <div class="card">
+          <h3>Plaintiff vs Defense</h3>
+          <canvas id="chart-side"></canvas>
+        </div>
+        <div class="card">
+          <h3>Cases by Year</h3>
+          <canvas id="chart-years"></canvas>
+        </div>
+        <div class="card">
+          <h3>Pipeline Status</h3>
+          <canvas id="chart-state"></canvas>
+        </div>
+        <div class="card">
+          <h3>Pipeline Stage</h3>
+          <canvas id="chart-stages"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASE ANALYSIS TAB -->
+    <div id="tab-cases" class="tab-content">
+      <div class="charts-grid">
+        <div class="card full-width">
+          <h3>Year-over-Year by Case Area</h3>
+          <canvas id="chart-year-area" style="max-height:400px;"></canvas>
+        </div>
+        <div class="card">
+          <h3>Plaintiff — Service Breakdown</h3>
+          <canvas id="chart-plt-service"></canvas>
+        </div>
+        <div class="card">
+          <h3>Defense — Service Breakdown</h3>
+          <canvas id="chart-def-service"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- FIRMS TAB -->
+    <div id="tab-firms" class="tab-content">
+      <div class="section">
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>Firm</th>
+                <th>Cases</th>
+                <th>Attorneys</th>
+                <th>Case Types</th>
+                <th>Services</th>
+                <th style="width:120px;">Volume</th>
+              </tr>
+            </thead>
+            <tbody id="firms-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTORNEYS TAB -->
+    <div id="tab-attorneys" class="tab-content">
+      <div class="section">
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>Attorney</th>
+                <th>Firm</th>
+                <th>Cases</th>
+                <th>Case Types</th>
+                <th>Services</th>
+                <th style="width:120px;">Volume</th>
+              </tr>
+            </thead>
+            <tbody id="attorneys-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARKETING ACTIONS TAB -->
+    <div id="tab-actions" class="tab-content">
+      <div class="section">
+        <div class="section-title" style="color:#ef4444;">Re-Engage — Haven't Referred in 90+ Days</div>
+        <div id="cold-list"></div>
+      </div>
+      <div class="section">
+        <div class="section-title" style="color:#22c55e;">Nurture — Recent First-Time Referrers</div>
+        <div id="new-list"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const COLORS = {
+    blue: '#38bdf8', purple: '#818cf8', green: '#34d399', yellow: '#fbbf24',
+    red: '#f87171', orange: '#fb923c', pink: '#f472b6', teal: '#2dd4bf',
+    indigo: '#a78bfa', slate: '#64748b', cyan: '#22d3ee', lime: '#a3e635',
+    amber: '#f59e0b', rose: '#fb7185',
+  };
+  const PALETTE = Object.values(COLORS);
+
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.borderColor = '#334155';
+  Chart.defaults.font.family = "'Segoe UI', sans-serif";
+
+  document.getElementById('report-date').textContent = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  async function loadReport() {
+    const res = await fetch('/api/report');
+    const data = await res.json();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('report').style.display = 'block';
+
+    renderSummary(data.summary);
+    renderDoughnut('chart-area', data.casesByArea);
+    renderDoughnut('chart-service', data.casesByService);
+    renderDoughnut('chart-side', data.casesBySide, { Plaintiff: COLORS.blue, Defense: COLORS.red, 'Not Specified': COLORS.slate });
+    renderBarChart('chart-years', data.casesByYear, true);
+    renderDoughnut('chart-state', data.casesByState, { OPEN: COLORS.blue, WON: COLORS.green, LOST: COLORS.red });
+    renderHorizontalBar('chart-stages', data.casesByStage);
+    renderYearByArea('chart-year-area', data.yearByArea);
+    renderServiceBySide('chart-plt-service', data.serviceBySide['Plaintiff'] || {});
+    renderServiceBySide('chart-def-service', data.serviceBySide['Defense'] || {});
+    renderFirmsTable(data.topFirms);
+    renderAttorneysTable(data.topAttorneys);
+    renderColdList(data.coldAttorneys);
+    renderNewList(data.newReferrers);
+  }
+
+  function renderSummary(s) {
+    const cards = [
+      { value: s.totalOpportunities, label: 'Total Cases' },
+      { value: s.openCases, label: 'Open Cases' },
+      { value: s.wonCases, label: 'Completed' },
+      { value: s.uniqueAttorneys, label: 'Referring Attorneys' },
+      { value: s.uniqueFirms, label: 'Referring Firms' },
+      { value: s.classificationRate + '%', label: 'Cases Classified', cls: 'highlight' },
+    ];
+    document.getElementById('summary-grid').innerHTML = cards.map(c => `
+      <div class="summary-card ${c.cls||''}">
+        <div class="value">${typeof c.value === 'number' ? c.value.toLocaleString() : c.value}</div>
+        <div class="label">${c.label}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderDoughnut(id, data, colorMap) {
+    const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]);
+    const labels = sorted.map(s => s[0]);
+    const values = sorted.map(s => s[1]);
+    new Chart(document.getElementById(id), {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colorMap ? labels.map((l,i) => colorMap[l] || PALETTE[i % PALETTE.length]) : PALETTE,
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'right', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } }
+      }
+    });
+  }
+
+  function renderBarChart(id, data, filterUnknown) {
+    let labels = Object.keys(data);
+    if (filterUnknown) labels = labels.filter(k => k !== 'Unknown');
+    labels.sort();
+    new Chart(document.getElementById(id), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Cases',
+          data: labels.map(l => data[l]),
+          backgroundColor: 'rgba(56, 189, 248, 0.7)',
+          borderRadius: 6, borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
+      }
+    });
+  }
+
+  function renderHorizontalBar(id, data) {
+    const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]);
+    new Chart(document.getElementById(id), {
+      type: 'bar',
+      data: {
+        labels: sorted.map(s => s[0].length > 30 ? s[0].slice(0,30)+'...' : s[0]),
+        datasets: [{
+          data: sorted.map(s => s[1]),
+          backgroundColor: PALETTE, borderRadius: 6, borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true }, y: { grid: { display: false } } }
+      }
+    });
+  }
+
+  function renderYearByArea(id, yearByArea) {
+    const years = Object.keys(yearByArea).filter(y => y !== 'null').sort();
+    const allAreas = new Set();
+    years.forEach(y => Object.keys(yearByArea[y]).forEach(a => allAreas.add(a)));
+    const areas = [...allAreas].filter(a => a !== 'Unknown');
+
+    const datasets = areas.map((area, i) => ({
+      label: area,
+      data: years.map(y => yearByArea[y][area] || 0),
+      backgroundColor: PALETTE[i % PALETTE.length],
+      borderRadius: 4,
+    }));
+
+    new Chart(document.getElementById(id), {
+      type: 'bar',
+      data: { labels: years, datasets },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11 } } } },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, beginAtZero: true },
+        }
+      }
+    });
+  }
+
+  function renderServiceBySide(id, data) {
+    const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]).slice(0, 8);
+    if (!sorted.length) {
+      document.getElementById(id).parentElement.innerHTML += '<p style="color:#64748b;text-align:center;">No data</p>';
+      return;
+    }
+    new Chart(document.getElementById(id), {
+      type: 'bar',
+      data: {
+        labels: sorted.map(s => s[0].length > 25 ? s[0].slice(0,25)+'...' : s[0]),
+        datasets: [{ data: sorted.map(s => s[1]), backgroundColor: PALETTE, borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true }, y: { grid: { display: false } } }
+      }
+    });
+  }
+
+  function rankBadge(i) {
+    const cls = i===0 ? 'rank-1' : i===1 ? 'rank-2' : i===2 ? 'rank-3' : 'rank-other';
+    return `<span class="rank ${cls}">${i+1}</span>`;
+  }
+
+  function barInline(v, max) {
+    return `<div class="bar-inline"><div class="bar-inline-fill" style="width:${max>0?(v/max*100):0}%"></div></div>`;
+  }
+
+  function badges(obj, cls) {
+    return Object.entries(obj).filter(([k]) => k !== 'Unknown' && k !== 'Not Specified')
+      .map(([k,v]) => `<span class="badge ${cls}">${k}: ${v}</span>`).join(' ');
+  }
+
+  function renderFirmsTable(firms) {
+    const max = firms[0]?.count || 1;
+    document.getElementById('firms-table').innerHTML = firms.map((f, i) => `
+      <tr>
+        <td>${rankBadge(i)}</td>
+        <td><strong>${f.name}</strong></td>
+        <td>${f.count}</td>
+        <td>${f.attorneyCount}</td>
+        <td>${badges(f.caseTypes, 'badge-blue')}</td>
+        <td>${badges(f.services, 'badge-purple')}</td>
+        <td>${barInline(f.count, max)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderAttorneysTable(attorneys) {
+    const max = attorneys[0]?.count || 1;
+    document.getElementById('attorneys-table').innerHTML = attorneys.map((a, i) => `
+      <tr>
+        <td>${rankBadge(i)}</td>
+        <td><strong>${a.name}</strong></td>
+        <td>${a.firm}</td>
+        <td>${a.count}</td>
+        <td>${badges(a.caseTypes, 'badge-blue')}</td>
+        <td>${badges(a.services, 'badge-purple')}</td>
+        <td>${barInline(a.count, max)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderColdList(cold) {
+    if (!cold.length) {
+      document.getElementById('cold-list').innerHTML = '<div class="action-card"><p>No cold referral sources detected. All repeat referrers are active.</p></div>';
+      return;
+    }
+    document.getElementById('cold-list').innerHTML = cold.map(a => {
+      const days = Math.floor((new Date() - new Date(a.lastReferral)) / 86400000);
+      return `
+        <div class="action-card cold">
+          <h4>${a.name} <span class="badge badge-red">${days} days since last referral</span></h4>
+          <p><strong>${a.firm}</strong> &mdash; ${a.count} total cases. ${badges(a.caseTypes,'badge-blue')} ${badges(a.services,'badge-purple')}<br>
+          <em>Action: Schedule a call or lunch to reconnect.</em></p>
+        </div>`;
+    }).join('');
+  }
+
+  function renderNewList(newRefs) {
+    if (!newRefs.length) {
+      document.getElementById('new-list').innerHTML = '<div class="action-card"><p>No recent first-time referrers to show.</p></div>';
+      return;
+    }
+    document.getElementById('new-list').innerHTML = newRefs.map(a => `
+      <div class="action-card new">
+        <h4>${a.name} <span class="badge badge-green">First referral</span></h4>
+        <p><strong>${a.firm}</strong> &mdash; Case: ${a.cases[0]}. ${badges(a.caseTypes,'badge-blue')}<br>
+        <em>Action: Send a thank-you note and schedule an intro meeting.</em></p>
+      </div>
+    `).join('');
+  }
+
+  loadReport();
+</script>
+</body>
+</html>
