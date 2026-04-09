@@ -231,7 +231,7 @@ async function scrapeJustia(state, practiceAreaSlug) {
           }
 
           results.push({
-            firstName, lastName, phone,
+            firstName, lastName, phone, email: null,
             firmName: '', firmAddress: null,
             state: st, practiceAreas: [],
             source: 'justia', sourceUrl: href,
@@ -253,7 +253,69 @@ async function scrapeJustia(state, practiceAreaSlug) {
       if (pageNum < MAX_JUSTIA_PAGES) await sleep(REQUEST_DELAY);
     }
 
-    log.info(`Scraped ${allRecords.length} attorneys from Justia (${Math.min(MAX_JUSTIA_PAGES, allRecords.length > 0 ? MAX_JUSTIA_PAGES : 1)} pages)`);
+    log.info(`Scraped ${allRecords.length} attorneys from Justia listings, enriching profiles...`);
+
+    // Enrich profiles to get firm name, email, and address
+    const MAX_ENRICH = 50;
+    let enriched = 0;
+    for (const record of allRecords) {
+      if (enriched >= MAX_ENRICH) break;
+      if (!record.sourceUrl) continue;
+      try {
+        await page.goto(record.sourceUrl, { waitUntil: 'load', timeout: 15000 });
+        await page.waitForTimeout(1500);
+
+        const profile = await page.evaluate(() => {
+          let firm = '';
+          let address = null;
+          let email = null;
+
+          // Try JSON-LD first (most reliable)
+          const jsonld = [...document.querySelectorAll('script[type="application/ld+json"]')].map(s => {
+            try { return JSON.parse(s.textContent); } catch { return null; }
+          }).filter(Boolean);
+
+          for (const j of jsonld) {
+            // Check workLocation for firm name and address
+            if (j.workLocation) {
+              if (j.workLocation.name && !firm) firm = j.workLocation.name;
+              if (j.workLocation.address) {
+                const a = j.workLocation.address;
+                const street = Array.isArray(a.streetAddress) ? a.streetAddress.join(', ') : (a.streetAddress || '');
+                address = [street, a.addressLocality, a.addressRegion, a.postalCode].filter(Boolean).join(', ');
+              }
+              if (j.workLocation.telephone) {
+                // Phone already captured from listing
+              }
+            }
+            // Check itemReviewed for older profile format
+            if (j.itemReviewed) {
+              if (j.itemReviewed.name && !firm) firm = '';  // itemReviewed.name is the lawyer, not firm
+              if (j.itemReviewed.address) {
+                const a = j.itemReviewed.address;
+                const street = Array.isArray(a.streetAddress) ? a.streetAddress.join(', ') : (a.streetAddress || '');
+                if (!address) address = [street, a.addressLocality, a.addressRegion, a.postalCode].filter(Boolean).join(', ');
+              }
+            }
+          }
+
+          // Email — check for mailto links
+          const emailEl = document.querySelector('a[href^="mailto:"]');
+          if (emailEl) email = emailEl.href.replace('mailto:', '');
+
+          return { firm, address, email };
+        });
+
+        if (profile.firm) record.firmName = profile.firm;
+        if (profile.address) record.firmAddress = profile.address;
+        if (profile.email) record.email = profile.email;
+        enriched++;
+      } catch {
+        // Skip failed profile loads
+      }
+    }
+    log.info(`Enriched ${enriched} profiles with firm/email data`);
+
     await browser.close();
     return allRecords;
   } catch (err) {
