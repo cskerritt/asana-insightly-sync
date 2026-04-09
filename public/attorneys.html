@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attorney Leads — KWVRS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+    /* === NAV === */
+    .nav { display: flex; align-items: center; gap: 0.25rem; padding: 0.75rem 1.5rem; background: #1e293b; border-bottom: 1px solid #334155; flex-wrap: wrap; }
+    .nav .brand { font-weight: 700; font-size: 1.1rem; color: #f8fafc; text-decoration: none; margin-right: 1.5rem; }
+    .nav .brand span { color: #38bdf8; font-weight: 400; }
+    .nav a { color: #94a3b8; text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.7rem; border-radius: 0.375rem; transition: background 0.2s, color 0.2s; }
+    .nav a:hover { color: #e2e8f0; background: rgba(56,189,248,0.1); }
+    .nav a.active { color: #38bdf8; background: rgba(56,189,248,0.15); }
+
+    /* === LAYOUT === */
+    .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+    h2 { font-size: 1rem; margin-bottom: 0.5rem; color: #f8fafc; }
+    .section { margin-bottom: 1.75rem; }
+
+    /* === STATS === */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+    .stat { background: #1e293b; padding: 1rem 0.75rem; border-radius: 0.75rem; text-align: center; border: 1px solid #334155; }
+    .stat-value { font-size: 1.75rem; font-weight: 800; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.15rem; }
+
+    /* === CARD === */
+    .card { background: #1e293b; border-radius: 0.75rem; padding: 1.25rem; border: 1px solid #334155; margin-bottom: 1.25rem; }
+    .card h3 { font-size: 0.85rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    /* === FORMS === */
+    .search-row { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; gap: 0.25rem; }
+    .field label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+    select, input[type="text"] { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 0.5rem 0.65rem; border-radius: 0.375rem; font-size: 0.82rem; min-width: 160px; }
+    select:focus, input:focus { outline: none; border-color: #38bdf8; }
+    .checkbox-field { display: flex; align-items: center; gap: 0.4rem; padding-bottom: 0.15rem; }
+    .checkbox-field input { accent-color: #38bdf8; }
+    .checkbox-field label { font-size: 0.8rem; color: #94a3b8; }
+
+    /* === BUTTONS === */
+    .btn { padding: 0.5rem 0.9rem; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: background 0.2s; text-decoration: none; display: inline-block; white-space: nowrap; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled { background: #475569; cursor: not-allowed; }
+    .btn-secondary { background: #334155; color: #e2e8f0; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-success { background: #059669; color: white; }
+    .btn-success:hover { background: #047857; }
+    .btn-success:disabled { background: #475569; cursor: not-allowed; }
+
+    /* === ALERT === */
+    .alert { padding: 0.6rem 0.85rem; border-radius: 0.5rem; font-size: 0.8rem; margin-top: 0.75rem; display: none; }
+    .alert-warning { background: #422006; color: #fbbf24; border: 1px solid #854d0e; }
+    .alert-success { background: #064e3b; color: #34d399; border: 1px solid #065f46; }
+    .alert-error { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+
+    /* === TABLE === */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 0.5rem; border: 1px solid #334155; background: #1e293b; }
+    table { width: 100%; border-collapse: collapse; min-width: 750px; }
+    th, td { text-align: left; padding: 0.55rem 0.65rem; border-bottom: 1px solid rgba(51,65,85,0.5); font-size: 0.8rem; }
+    th { color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.05em; background: #1e293b; position: sticky; top: 0; }
+    td a { color: #38bdf8; text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+    .badge { display: inline-block; padding: 0.12rem 0.45rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+    .badge-completed { background: #064e3b; color: #34d399; }
+    .badge-failed { background: #450a0a; color: #fca5a5; }
+    .badge-in_progress { background: #422006; color: #fbbf24; }
+    .badge-pushed { background: #1e3a5f; color: #38bdf8; }
+    .badge-new { background: #334155; color: #94a3b8; }
+    .empty { text-align: center; padding: 2.5rem 1rem; color: #475569; font-size: 0.9rem; }
+
+    /* === FILTER BAR === */
+    .filter-bar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .filter-bar select { min-width: 140px; }
+
+    /* === COVERAGE GRID === */
+    .coverage-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .coverage-grid { border-collapse: collapse; font-size: 0.72rem; }
+    .coverage-grid th, .coverage-grid td { padding: 0.35rem 0.5rem; border: 1px solid #334155; text-align: center; }
+    .coverage-grid th { background: #1e293b; color: #64748b; font-weight: 600; white-space: nowrap; }
+    .coverage-grid th.rotate { writing-mode: vertical-rl; text-orientation: mixed; height: 90px; vertical-align: bottom; padding: 0.4rem 0.25rem; }
+    .coverage-grid td.state-label { text-align: left; color: #94a3b8; font-weight: 600; white-space: nowrap; background: #1e293b; }
+    .cell-searched { background: #064e3b; }
+    .cell-empty { background: #334155; }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 640px) {
+      .container { padding: 1rem; }
+      .nav { padding: 0.6rem 1rem; }
+      .search-row { flex-direction: column; align-items: stretch; }
+      .field select { min-width: 100%; }
+      .stats { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+      .stat { padding: 0.65rem 0.35rem; }
+      .stat-value { font-size: 1.35rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="nav">
+    <a href="/" class="brand">KWVRS <span>Dashboard</span></a>
+    <a href="/">Sync</a>
+    <a href="/report.html">Reports</a>
+    <a href="/attorneys.html" class="active">Attorney Leads</a>
+  </div>
+
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="stats" id="stats">
+      <div class="stat"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Total Attorneys</div></div>
+      <div class="stat"><div class="stat-value" id="stat-pushed">0</div><div class="stat-label">Pushed to Insightly</div></div>
+      <div class="stat"><div class="stat-value" id="stat-states">0</div><div class="stat-label">States Covered</div></div>
+    </div>
+
+    <!-- Search Panel -->
+    <div class="card">
+      <h3>Search Attorneys</h3>
+      <div class="search-row">
+        <div class="field">
+          <label for="search-state">State</label>
+          <select id="search-state"><option value="">Select state...</option></select>
+        </div>
+        <div class="field">
+          <label for="search-pa">Practice Area</label>
+          <select id="search-pa"><option value="">Select practice area...</option></select>
+        </div>
+        <div class="checkbox-field">
+          <input type="checkbox" id="force-rerun">
+          <label for="force-rerun">Force re-run</label>
+        </div>
+        <button class="btn btn-primary" id="btn-search" onclick="startSearch()">Search</button>
+      </div>
+      <div id="alert" class="alert"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="section">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;">
+        <h2>Results</h2>
+        <button class="btn btn-success" id="btn-push" onclick="pushSelected()" disabled>Push Selected to Insightly</button>
+      </div>
+      <div class="filter-bar">
+        <select id="filter-state" onchange="fetchAttorneys()"><option value="">All States</option></select>
+        <select id="filter-pa" onchange="fetchAttorneys()"><option value="">All Practice Areas</option></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="select-all" onchange="toggleAll(this)"></th>
+              <th>Name</th>
+              <th>Firm</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>State</th>
+              <th>Source</th>
+              <th>Insightly</th>
+            </tr>
+          </thead>
+          <tbody id="attorney-body"></tbody>
+        </table>
+      </div>
+      <div id="attorney-empty" class="empty">No attorneys found. Run a search above.</div>
+    </div>
+
+    <!-- Coverage Grid -->
+    <div class="section">
+      <h2>Coverage Grid</h2>
+      <div class="coverage-wrap" id="coverage-wrap">
+        <div class="empty" id="coverage-empty">No searches run yet.</div>
+      </div>
+    </div>
+
+    <!-- Search History -->
+    <div class="section">
+      <h2>Search History</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>State</th>
+              <th>Practice Area</th>
+              <th>Source</th>
+              <th>Date</th>
+              <th>Results</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+      <div id="history-empty" class="empty" style="display:none;">No search history yet.</div>
+    </div>
+
+  </div>
+
+  <script>
+    let allStates = [];
+    let allPracticeAreas = [];
+
+    async function init() {
+      try {
+        const [statesRes, paRes] = await Promise.all([
+          fetch('/api/attorneys/states'),
+          fetch('/api/attorneys/practice-areas')
+        ]);
+        allStates = await statesRes.json();
+        allPracticeAreas = await paRes.json();
+
+        const searchState = document.getElementById('search-state');
+        const filterState = document.getElementById('filter-state');
+        allStates.forEach(s => {
+          searchState.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+          filterState.innerHTML += `<option value="${s.code}">${s.name}</option>`;
+        });
+
+        const searchPA = document.getElementById('search-pa');
+        const filterPA = document.getElementById('filter-pa');
+        allPracticeAreas.forEach(pa => {
+          const name = pa.name || pa;
+          const val = pa.slug || pa.name || pa;
+          searchPA.innerHTML += `<option value="${val}">${name}</option>`;
+          filterPA.innerHTML += `<option value="${val}">${name}</option>`;
+        });
+      } catch (e) {
+        console.error('Failed to load dropdowns', e);
+      }
+
+      fetchStats();
+      fetchAttorneys();
+      fetchCoverage();
+      fetchHistory();
+    }
+
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/attorneys/stats');
+        const data = await res.json();
+        document.getElementById('stat-total').textContent = data.total || 0;
+        document.getElementById('stat-pushed').textContent = data.pushed || 0;
+        document.getElementById('stat-states').textContent = data.statesCovered || data.states || 0;
+      } catch (e) {
+        console.error('Failed to fetch stats', e);
+      }
+    }
+
+    async function fetchAttorneys() {
+      try {
+        const state = document.getElementById('filter-state').value;
+        const pa = document.getElementById('filter-pa').value;
+        const params = new URLSearchParams();
+        if (state) params.set('state', state);
+        if (pa) params.set('practice_area', pa);
+
+        const res = await fetch('/api/attorneys?' + params.toString());
+        const data = await res.json();
+        const tbody = document.getElementById('attorney-body');
+        const empty = document.getElementById('attorney-empty');
+
+        if (!data.length) {
+          tbody.innerHTML = '';
+          empty.style.display = 'block';
+          document.getElementById('btn-push').disabled = true;
+          return;
+        }
+
+        empty.style.display = 'none';
+        tbody.innerHTML = data.map(a => `
+          <tr>
+            <td><input type="checkbox" class="atty-cb" value="${a.id}"></td>
+            <td>${a.source_url ? `<a href="${a.source_url}" target="_blank">${esc(a.name)}</a>` : esc(a.name)}</td>
+            <td>${esc(a.firm || '')}</td>
+            <td>${esc(a.email || '')}</td>
+            <td>${esc(a.phone || '')}</td>
+            <td>${esc(a.state || '')}</td>
+            <td>${esc(a.source || '')}</td>
+            <td><span class="badge badge-${a.insightly_contact_id ? 'pushed' : 'new'}">${a.insightly_contact_id ? 'Pushed' : 'New'}</span></td>
+          </tr>
+        `).join('');
+
+        // Re-bind checkbox listener
+        document.querySelectorAll('.atty-cb').forEach(cb => {
+          cb.addEventListener('change', updatePushButton);
+        });
+      } catch (e) {
+        console.error('Failed to fetch attorneys', e);
+      }
+    }
+
+    function updatePushButton() {
+      const checked = document.querySelectorAll('.atty-cb:checked').length;
+      document.getElementById('btn-push').disabled = checked === 0;
+    }
+
+    function toggleAll(source) {
+      document.querySelectorAll('.atty-cb').forEach(cb => {
+        cb.checked = source.checked;
+      });
+      updatePushButton();
+    }
+
+    async function fetchCoverage() {
+      try {
+        const res = await fetch('/api/attorneys/coverage');
+        const data = await res.json();
+        const wrap = document.getElementById('coverage-wrap');
+        const empty = document.getElementById('coverage-empty');
+
+        if (!data || !data.states || !data.states.length) {
+          wrap.innerHTML = '';
+          wrap.appendChild(empty);
+          empty.style.display = 'block';
+          return;
+        }
+
+        empty.style.display = 'none';
+        const practiceAreas = data.practiceAreas || allPracticeAreas;
+
+        let html = '<table class="coverage-grid"><thead><tr><th></th>';
+        practiceAreas.forEach(pa => {
+          html += `<th class="rotate">${esc(pa)}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        data.states.forEach(row => {
+          html += `<tr><td class="state-label">${esc(row.state)}</td>`;
+          practiceAreas.forEach(pa => {
+            const searched = row.searched && row.searched.includes(pa);
+            html += `<td class="${searched ? 'cell-searched' : 'cell-empty'}">${searched ? '&#10003;' : ''}</td>`;
+          });
+          html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        wrap.innerHTML = html;
+      } catch (e) {
+        console.error('Failed to fetch coverage', e);
+      }
+    }
+
+    async function fetchHistory() {
+      try {
+        const res = await fetch('/api/attorneys/search-log');
+        const data = await res.json();
+        const tbody = document.getElementById('history-body');
+        const empty = document.getElementById('history-empty');
+
+        if (!data.length) {
+          tbody.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+
+        empty.style.display = 'none';
+        tbody.innerHTML = data.map(r => `
+          <tr>
+            <td>${esc(r.state)}</td>
+            <td>${esc(r.practice_area)}</td>
+            <td>${esc(r.source || '')}</td>
+            <td>${new Date(r.searched_at || r.created_at).toLocaleString()}</td>
+            <td>${r.result_count || 0}</td>
+            <td><span class="badge badge-${r.status}">${r.status}</span></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to fetch history', e);
+      }
+    }
+
+    async function startSearch() {
+      const state = document.getElementById('search-state').value;
+      const practiceArea = document.getElementById('search-pa').value;
+      const forceRerun = document.getElementById('force-rerun').checked;
+      const alertEl = document.getElementById('alert');
+      const btn = document.getElementById('btn-search');
+
+      if (!state || !practiceArea) {
+        alertEl.className = 'alert alert-warning';
+        alertEl.textContent = 'Please select both a state and practice area.';
+        alertEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Searching...';
+      alertEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/attorneys/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state, practiceArea, forceRerun })
+        });
+        const data = await res.json();
+
+        if (data.alreadySearched) {
+          alertEl.className = 'alert alert-warning';
+          alertEl.textContent = `Already searched on ${new Date(data.searchedAt).toLocaleDateString()} (${data.resultCount} results). Check "Force re-run" to search again.`;
+          alertEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Search';
+          return;
+        }
+
+        alertEl.className = 'alert alert-success';
+        alertEl.textContent = 'Search started. Polling for results...';
+        alertEl.style.display = 'block';
+
+        // Poll for completion
+        const pollId = setInterval(async () => {
+          await fetchHistory();
+          const logRes = await fetch('/api/attorneys/search-log');
+          const logs = await logRes.json();
+          const entry = logs.find(l => l.id === data.logId);
+
+          if (entry && entry.status !== 'in_progress') {
+            clearInterval(pollId);
+            btn.disabled = false;
+            btn.textContent = 'Search';
+
+            if (entry.status === 'completed') {
+              alertEl.className = 'alert alert-success';
+              alertEl.textContent = `Search complete! Found ${entry.result_count} attorneys.`;
+            } else {
+              alertEl.className = 'alert alert-error';
+              alertEl.textContent = 'Search failed. Check server logs for details.';
+            }
+            alertEl.style.display = 'block';
+
+            fetchStats();
+            fetchAttorneys();
+            fetchCoverage();
+          }
+        }, 3000);
+
+      } catch (e) {
+        alertEl.className = 'alert alert-error';
+        alertEl.textContent = 'Error starting search: ' + e.message;
+        alertEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Search';
+      }
+    }
+
+    async function pushSelected() {
+      const ids = Array.from(document.querySelectorAll('.atty-cb:checked')).map(cb => parseInt(cb.value));
+      if (!ids.length) return;
+
+      const btn = document.getElementById('btn-push');
+      btn.disabled = true;
+      btn.textContent = 'Pushing...';
+
+      try {
+        const res = await fetch('/api/attorneys/push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ attorneyIds: ids })
+        });
+        const data = await res.json();
+
+        const alertEl = document.getElementById('alert');
+        alertEl.className = 'alert alert-success';
+        alertEl.textContent = `Pushed ${data.pushed || ids.length} attorneys to Insightly.`;
+        alertEl.style.display = 'block';
+
+        fetchStats();
+        fetchAttorneys();
+      } catch (e) {
+        const alertEl = document.getElementById('alert');
+        alertEl.className = 'alert alert-error';
+        alertEl.textContent = 'Push failed: ' + e.message;
+        alertEl.style.display = 'block';
+      }
+
+      btn.textContent = 'Push Selected to Insightly';
+    }
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    init();
+  </script>
+</body>
+</html>
