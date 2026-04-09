@@ -127,7 +127,7 @@
     .checklist-stats { display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.82rem; color: #94a3b8; }
     .checklist-stats strong { color: #f8fafc; }
     .category-label { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-    .cat-vip { background: #422006; color: #fbbf24; } .cat-cold { background: #450a0a; color: #fca5a5; } .cat-warm { background: #2e1065; color: #a78bfa; } .cat-new { background: #064e3b; color: #34d399; }
+    .cat-vip { background: #422006; color: #fbbf24; } .cat-cold { background: #450a0a; color: #fca5a5; } .cat-warm { background: #2e1065; color: #a78bfa; } .cat-new { background: #064e3b; color: #34d399; } .cat-crosssell { background: #1e3a5f; color: #38bdf8; } .cat-opposing { background: #1e293b; color: #fb923c; }
 
     /* === MOBILE === */
     @media (max-width: 768px) {
@@ -216,11 +216,14 @@
       <div class="no-print">
         <div class="checklist-filter">
           <select id="filter-category" onchange="renderChecklist()">
-            <option value="all">Show All</option>
+            <option value="all">Show All To-Do Items</option>
             <option value="vip">VIP — Our Best Referrers (Keep Them Happy)</option>
             <option value="cold">Gone Cold — Haven't Heard From Them (Re-Engage)</option>
+            <option value="slowing">Slowing Down — Used to Refer More Often (Check In)</option>
             <option value="warm">Getting Warmer — Could Become Regulars (Grow)</option>
             <option value="new">Brand New — Just Sent First Case (Welcome)</option>
+            <option value="crosssell">Cross-Sell — Don't Know About All Our Services</option>
+            <option value="opposing">Opposing Counsel — They've Seen Our Work (New Lead)</option>
             <option value="done">Completed Items</option>
           </select>
         </div>
@@ -238,6 +241,41 @@
         <div class="card"><h3>Open vs Completed</h3><canvas id="chart-state"></canvas></div>
         <div class="card full-width"><h3>Cases by Year and Type</h3><canvas id="chart-year-area" style="max-height:350px;"></canvas></div>
       </div>
+
+      <div class="section">
+        <div class="section-title">Where Our Cases Come From (Geography)</div>
+        <div class="charts-grid">
+          <div class="card"><h3>Cases by State</h3><canvas id="chart-geo-states"></canvas></div>
+          <div class="card"><h3>Top Cities</h3><canvas id="chart-geo-cities"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Cross-Sell Opportunities — Firms That Don't Know All Our Services</div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Firm</th><th>Cases</th><th>Services They Use</th><th>Services They're Missing</th></tr></thead>
+          <tbody id="crosssell-table"></tbody>
+        </table></div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Opposing Counsel — Attorneys Who've Seen Our Work</div>
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:0.75rem;">These attorneys were on the other side of cases involving KWVRS. They know the quality of our work — they could become referrers.</p>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>Attorney</th><th>Firm</th><th>Times Seen Our Work</th></tr></thead>
+          <tbody id="opposing-table"></tbody>
+        </table></div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Paralegal Network</div>
+        <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:0.75rem;">Paralegals often choose which expert to hire. These are the ones connected to our cases.</p>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Paralegal</th><th>Email</th><th>Firm(s)</th><th>Cases</th></tr></thead>
+          <tbody id="paralegal-table"></tbody>
+        </table></div></div>
+      </div>
+
       <div class="section">
         <div class="section-title">All Top Referring Firms</div>
         <div class="card"><div class="table-wrap"><table>
@@ -291,6 +329,10 @@ async function loadReport(){
   renderDoughnut('chart-side',reportData.casesBySide,{Plaintiff:COLORS.blue,Defense:COLORS.red,'Not Specified':COLORS.slate});
   renderDoughnut('chart-state',reportData.casesByState,{OPEN:COLORS.blue,WON:COLORS.green});
   renderYearByArea('chart-year-area',reportData.yearByArea);
+  renderGeographic(reportData.geographic);
+  renderCrossSell(reportData.crossSellOpps);
+  renderOpposingCounsel(reportData.opposingCounselLeads);
+  renderParalegals(reportData.paralegalList);
   renderFirmsTable(reportData.topFirms);
   renderAttorneysTable(reportData.topAttorneys);
   // Sync action items if none exist
@@ -371,13 +413,16 @@ function renderChecklist(){
   const total=actionItems.length;
   const done=actionItems.filter(i=>i.completed).length;
   document.getElementById('checklist-stats').innerHTML=`<span><strong>${done}</strong> of <strong>${total}</strong> completed</span><span>${total-done} remaining</span>`;
-  const catLabels={vip:'VIP',cold:'Gone Cold',warm:'Getting Warmer',new:'Brand New'};
-  const catClasses={vip:'cat-vip',cold:'cat-cold',warm:'cat-warm',new:'cat-new'};
+  const catLabels={vip:'VIP',cold:'Gone Cold',slowing:'Slowing Down',warm:'Getting Warmer',new:'Brand New',crosssell:'Cross-Sell',opposing:'Opposing Counsel'};
+  const catClasses={vip:'cat-vip',cold:'cat-cold',slowing:'cat-cold',warm:'cat-warm',new:'cat-new',crosssell:'cat-vip',opposing:'cat-warm'};
   const catActions={
     vip:'Schedule a lunch, call, or send a thank-you. Keep this relationship strong.',
     cold:'Call or email to reconnect. They know us — just need a reminder.',
+    slowing:'This person used to send cases more often. Quick check-in call to stay top of mind.',
     warm:'Send a thank-you note, share an article, or invite to a CLE. Build the relationship.',
-    new:'Send a thank-you within 48 hours. Follow up after we deliver the report.'
+    new:'Send a thank-you within 48 hours. Follow up after we deliver the report.',
+    crosssell:'Email about services they haven\'t used yet. They already trust us with other work.',
+    opposing:'Reach out to introduce ourselves. They\'ve seen our work from the other side — warm lead.',
   };
   document.getElementById('checklist').innerHTML=items.length?items.map(item=>`
     <div class="checklist-item ${item.completed?'done':''}">
@@ -409,6 +454,65 @@ async function saveNotes(id,notes){
   await fetch('/api/actions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes})});
   const item=actionItems.find(i=>i.id===id);
   if(item)item.notes=notes;
+}
+
+// === NEW ANALYTICS RENDERERS ===
+function renderGeographic(geo) {
+  if (!geo || !geo.topStates.length) {
+    document.getElementById('chart-geo-states').parentElement.innerHTML += '<p style="color:#64748b;text-align:center">No location data found in case notes</p>';
+    return;
+  }
+  const stateData = {};
+  geo.topStates.forEach(s => { stateData[s.name] = s.count; });
+  renderHorizontalBar('chart-geo-states', stateData);
+  const cityData = {};
+  geo.topCities.forEach(c => { cityData[c.name] = c.count; });
+  renderHorizontalBar('chart-geo-cities', cityData);
+}
+
+function renderCrossSell(opps) {
+  if (!opps || !opps.length) {
+    document.getElementById('crosssell-table').innerHTML = '<tr><td colspan="4" style="color:#64748b;text-align:center">No cross-sell opportunities found (firms need 3+ cases)</td></tr>';
+    return;
+  }
+  document.getElementById('crosssell-table').innerHTML = opps.slice(0, 20).map(c => `
+    <tr>
+      <td><strong>${c.firm}</strong></td>
+      <td>${c.count}</td>
+      <td>${c.currentServices.map(s => `<span class="badge badge-blue">${s}</span>`).join(' ')}</td>
+      <td>${c.missingServices.map(s => `<span class="badge badge-purple">${s}</span>`).join(' ')}</td>
+    </tr>
+  `).join('');
+}
+
+function renderOpposingCounsel(leads) {
+  if (!leads || !leads.length) {
+    document.getElementById('opposing-table').innerHTML = '<tr><td colspan="4" style="color:#64748b;text-align:center">No opposing counsel data found</td></tr>';
+    return;
+  }
+  document.getElementById('opposing-table').innerHTML = leads.slice(0, 20).map((o, i) => `
+    <tr>
+      <td>${rankBadge(i)}</td>
+      <td><strong>${o.name}</strong></td>
+      <td>${o.firm}</td>
+      <td>${o.count}</td>
+    </tr>
+  `).join('');
+}
+
+function renderParalegals(list) {
+  if (!list || !list.length) {
+    document.getElementById('paralegal-table').innerHTML = '<tr><td colspan="4" style="color:#64748b;text-align:center">No paralegal data found</td></tr>';
+    return;
+  }
+  document.getElementById('paralegal-table').innerHTML = list.slice(0, 30).map(p => `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.email ? `<a href="mailto:${p.email}" style="color:#38bdf8">${p.email}</a>` : '—'}</td>
+      <td>${p.firms.join(', ')}</td>
+      <td>${p.count}</td>
+    </tr>
+  `).join('');
 }
 
 // === CHART HELPERS ===

@@ -1,12 +1,19 @@
 /**
- * Parses referring attorney and firm info from Asana task notes.
- *
- * Handles variations like:
- *   Atty: Name          Attorney: Name          Name, Esq.
- *   Firm: Name          Firm: Name
- *   Email: x            E: x                    name@domain.com on its own line
- *   Direct: x           Tel: x                  T: x            Phone: x
+ * Parses referring attorney, firm, paralegal, opposing counsel,
+ * and address info from Asana task notes.
  */
+
+const US_STATES = {
+  AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',
+  CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',
+  IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',
+  ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',
+  MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',
+  NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',
+  OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',
+  TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',
+  WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',DC:'District of Columbia',
+};
 
 function parseNotes(notes) {
   if (!notes) return null;
@@ -24,43 +31,84 @@ function parseNotes(notes) {
     opposingFirm: null,
     caseType: null,
     dueDate: null,
+    // New fields
+    address: null,
+    city: null,
+    state: null,
+    zip: null,
+    clientName: null,
   };
+
+  let inParaSection = false;
+  let pastOpposingCounsel = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Case type (first line often like "2026 MAT", "2025 EMP", "2026 EMP, Defense")
-    if (i === 0 && /^\d{4}\s+(MAT|EMP|PI|WC)/i.test(line)) {
+    // Case type (first line often like "2026 MAT", "2025 EMP")
+    if (i === 0 && /^\d{4}\s+/i.test(line)) {
       result.caseType = line.replace(/[:\s]+$/, '');
       continue;
     }
 
     // Attorney name
-    if (/^(Atty|Attorney)\s*:\s*/i.test(line)) {
+    if (/^(Atty|Attorney)\s*:\s*/i.test(line) && !inParaSection) {
       result.attorneyName = cleanValue(line.replace(/^(Atty|Attorney)\s*:\s*/i, ''));
       continue;
     }
 
-    // Firm
+    // Firm — first occurrence is referring firm, after opposing counsel is opposing firm
     if (/^Firm\s*:\s*/i.test(line)) {
-      result.firmName = cleanValue(line.replace(/^Firm\s*:\s*/i, ''));
-      continue;
-    }
-
-    // Email for attorney (before Para section)
-    if (/^(Email|E)\s*:\s*/i.test(line) && !result.paraName && !isPastParaSection(lines, i)) {
-      const val = cleanValue(line.replace(/^(Email|E)\s*:\s*/i, ''));
-      if (val && val.includes('@')) {
-        result.email = val.split(/\s/)[0]; // take just the email part
+      const val = cleanValue(line.replace(/^Firm\s*:\s*/i, ''));
+      if (pastOpposingCounsel && !result.opposingFirm) {
+        result.opposingFirm = val;
+      } else if (!result.firmName) {
+        result.firmName = val;
       }
       continue;
     }
 
-    // Phone for attorney
-    if (/^(Direct|Tel|T|Phone|O|Main)\s*:\s*/i.test(line) && !result.paraName && !isPastParaSection(lines, i)) {
-      const val = cleanValue(line.replace(/^(Direct|Tel|T|Phone|O|Main)\s*:\s*/i, ''));
-      if (val && !result.phone) {
-        result.phone = val;
+    // Address line
+    if (/^Address\s*:\s*/i.test(line)) {
+      result.address = cleanValue(line.replace(/^Address\s*:\s*/i, ''));
+      continue;
+    }
+
+    // Look for city/state/zip patterns anywhere (e.g., "New York, NY 10017")
+    if (!result.state) {
+      const csz = line.match(/([A-Za-z\s.]+),\s*([A-Z]{2})\s+(\d{5})/);
+      if (csz) {
+        result.city = csz[1].trim();
+        result.state = csz[2];
+        result.zip = csz[3];
+        if (!result.address) result.address = line;
+        continue;
+      }
+    }
+
+    // Email — context-sensitive
+    if (/^(Email|E)\s*:\s*/i.test(line)) {
+      const val = cleanValue(line.replace(/^(Email|E)\s*:\s*/i, ''));
+      if (val && val.includes('@')) {
+        const emailAddr = val.split(/\s/)[0];
+        if (inParaSection && !result.paraEmail) {
+          result.paraEmail = emailAddr;
+        } else if (!inParaSection && !result.email) {
+          result.email = emailAddr;
+        }
+      }
+      continue;
+    }
+
+    // Phone — context-sensitive
+    if (/^(Direct|Tel|T|Phone|O|Main|C|Cell|Mobile|Fax)\s*:\s*/i.test(line)) {
+      const val = cleanValue(line.replace(/^(Direct|Tel|T|Phone|O|Main|C|Cell|Mobile|Fax)\s*:\s*/i, ''));
+      if (val && val.length > 5) {
+        if (inParaSection && !result.paraPhone) {
+          result.paraPhone = val;
+        } else if (!inParaSection && !result.phone) {
+          result.phone = val;
+        }
       }
       continue;
     }
@@ -68,27 +116,26 @@ function parseNotes(notes) {
     // Paralegal
     if (/^Para\s*:\s*/i.test(line)) {
       result.paraName = cleanValue(line.replace(/^Para\s*:\s*/i, ''));
+      inParaSection = true;
       continue;
     }
 
-    // Para email
-    if (/^E\s*:\s*/i.test(line) && result.paraName && !result.paraEmail) {
-      const val = cleanValue(line.replace(/^E\s*:\s*/i, ''));
-      if (val && val.includes('@')) {
-        result.paraEmail = val.split(/\s/)[0];
-      }
+    // Client name
+    if (/^Client\s*:\s*/i.test(line)) {
+      result.clientName = cleanValue(line.replace(/^Client\s*:\s*/i, ''));
+      inParaSection = false; // client line resets para section
       continue;
     }
 
     // Opposing counsel
     if (/^Opposing\s+Counsel\s*:\s*/i.test(line)) {
       result.opposingCounsel = cleanValue(line.replace(/^Opposing\s+Counsel\s*:\s*/i, ''));
-      continue;
-    }
-
-    // Opposing firm
-    if (/^Firm\s*:\s*/i.test(line) && result.opposingCounsel && !result.opposingFirm) {
-      result.opposingFirm = cleanValue(line.replace(/^Firm\s*:\s*/i, ''));
+      if (result.opposingCounsel) {
+        result.opposingCounsel = result.opposingCounsel
+          .replace(/,?\s*Esq\.?$/i, '').trim();
+      }
+      pastOpposingCounsel = true;
+      inParaSection = false;
       continue;
     }
 
@@ -98,26 +145,25 @@ function parseNotes(notes) {
       continue;
     }
 
-    // Fallback: if first non-case-type line has "Esq." and no attorney found yet, treat as attorney
+    // Fallback: Esq. in early lines = attorney name
     if (!result.attorneyName && /Esq\.?/i.test(line) && i <= 3) {
       result.attorneyName = cleanValue(line.replace(/,?\s*Esq\.?/i, '').replace(/^(Atty|Attorney)\s*:\s*/i, ''));
       continue;
     }
 
-    // Fallback: standalone email on a line near attorney info
-    if (!result.email && /@/.test(line) && i <= 6 && !/^(E|Email|Para)\s*:/i.test(line)) {
+    // Fallback: standalone email near top
+    if (!result.email && /@/.test(line) && i <= 6 && !inParaSection && !/^(E|Email|Para)\s*:/i.test(line)) {
       const match = line.match(/[\w.+-]+@[\w.-]+\.\w+/);
-      if (match) {
-        result.email = match[0];
-      }
+      if (match) result.email = match[0];
     }
   }
 
-  // If we got an attorney name with ", Esq." etc, clean it
+  // Clean attorney name
   if (result.attorneyName) {
     result.attorneyName = result.attorneyName
       .replace(/,?\s*Esq\.?$/i, '')
       .replace(/,?\s*Associate$/i, '')
+      .split(/\s*\(/).shift()
       .trim();
   }
 
@@ -133,11 +179,4 @@ function cleanValue(val) {
   return val || null;
 }
 
-function isPastParaSection(lines, currentIndex) {
-  for (let i = 0; i < currentIndex; i++) {
-    if (/^Para\s*:/i.test(lines[i])) return true;
-  }
-  return false;
-}
-
-module.exports = { parseNotes };
+module.exports = { parseNotes, US_STATES };

@@ -79,8 +79,11 @@ app.post('/api/actions/sync', async (req, res) => {
     const categories = [
       { key: 'vip', list: data.vipReferrers, desc: 'VIP — schedule quarterly check-in, send case updates, ask for referrals to colleagues' },
       { key: 'cold', list: data.coldAttorneys, desc: 'Re-engage — personal call or email to reconnect' },
+      { key: 'slowing', list: data.velocityAlerts || [], desc: 'Slowing down — used to refer regularly, pace has dropped' },
       { key: 'warm', list: data.warmingReferrers, desc: 'Growing — send thank-you, share article or CLE invite' },
       { key: 'new', list: data.newReferrers, desc: 'New — send thank-you within 48 hours, follow up after report delivery' },
+      { key: 'crosssell', list: (data.crossSellOpps || []).map(c => ({ name: c.firm, firm: `Missing: ${c.missingServices.join(', ')}`, email: '', count: c.count })), desc: 'Cross-sell — this firm doesn\'t know about all our services' },
+      { key: 'opposing', list: (data.opposingCounselLeads || []).filter(o => o.count >= 2).map(o => ({ name: o.name, firm: o.firm, email: '', count: o.count })), desc: 'Opposing counsel who\'ve seen our work — potential new referrers' },
     ];
     let count = 0;
     for (const cat of categories) {
@@ -99,6 +102,19 @@ app.post('/api/actions/sync', async (req, res) => {
     res.json({ synced: count });
   } catch (err) {
     log.error('Action sync failed', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: case outcome tracking
+app.post('/api/outcomes/:opportunityId', async (req, res) => {
+  try {
+    const { outcome, satisfaction, notes } = req.body;
+    const title = `Case Outcome: ${outcome}${satisfaction ? ' (' + satisfaction + ')' : ''}`;
+    await insightly.addNote('Opportunities', req.params.opportunityId, title, notes || '');
+    res.json({ ok: true });
+  } catch (err) {
+    log.error('Outcome tracking failed', err.message);
     res.status(500).json({ error: err.message });
   }
 });

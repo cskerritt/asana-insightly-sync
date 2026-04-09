@@ -232,6 +232,58 @@ function parsePhone(details) {
   return null;
 }
 
+// Parse opposing counsel
+function parseOpposingCounsel(details) {
+  if (!details) return null;
+  const match = details.match(/Opposing\s+Counsel\s*:\s*(.+)/i);
+  if (match) return match[1].replace(/,?\s*Esq\.?$/i, '').trim() || null;
+  return null;
+}
+
+// Parse opposing firm
+function parseOpposingFirm(details) {
+  if (!details) return null;
+  const lines = details.split('\n');
+  let foundOC = false;
+  for (const line of lines) {
+    if (/Opposing\s+Counsel/i.test(line)) { foundOC = true; continue; }
+    if (foundOC && /^Firm\s*:\s*/i.test(line.trim())) {
+      return line.trim().replace(/^Firm\s*:\s*/i, '').trim() || null;
+    }
+  }
+  return null;
+}
+
+// Parse city/state from details
+function parseLocation(details) {
+  if (!details) return null;
+  const match = details.match(/([A-Za-z\s.]+),\s*([A-Z]{2})\s+(\d{5})/);
+  if (match) return { city: match[1].trim(), state: match[2], zip: match[3] };
+  return null;
+}
+
+// Parse paralegal info
+function parseParalegal(details) {
+  if (!details) return null;
+  const match = details.match(/Para\s*:\s*(.+)/i);
+  if (!match) return null;
+  const name = match[1].trim();
+  if (!name) return null;
+  // Find para email
+  const lines = details.split('\n');
+  let foundPara = false;
+  let email = null;
+  for (const line of lines) {
+    if (/^Para\s*:/i.test(line.trim())) { foundPara = true; continue; }
+    if (foundPara) {
+      const em = line.match(/(?:E|Email)\s*:\s*([\w.+\-]+@[\w.\-]+\.\w+)/i);
+      if (em) { email = em[1]; break; }
+      if (/^(Client|Opposing|Interview|Due)/i.test(line.trim())) break;
+    }
+  }
+  return { name, email };
+}
+
 async function generate() {
   if (!client) init();
 
@@ -257,6 +309,10 @@ async function generate() {
     firm: parseFirm(o.OPPORTUNITY_DETAILS),
     email: parseEmail(o.OPPORTUNITY_DETAILS),
     phone: parsePhone(o.OPPORTUNITY_DETAILS),
+    opposingCounsel: parseOpposingCounsel(o.OPPORTUNITY_DETAILS),
+    opposingFirm: parseOpposingFirm(o.OPPORTUNITY_DETAILS),
+    location: parseLocation(o.OPPORTUNITY_DETAILS),
+    paralegal: parseParalegal(o.OPPORTUNITY_DETAILS),
   }));
 
   // --- Aggregations ---
@@ -515,6 +571,119 @@ async function generate() {
     bottleneckStage: Object.entries(openByStage).sort((a,b) => b[1] - a[1])[0] || null,
   };
 
+  // === NEW FEATURE 1: Referral Velocity ===
+  const velocityAlerts = [];
+  allAttorneys.forEach(a => {
+    if (a.count < 2) return;
+    // Get all referral dates for this attorney
+    const dates = [];
+    parsed.forEach(p => {
+      if (p.attorney === a.name && p.firm === a.firm) {
+        dates.push(new Date(p.opp.DATE_CREATED_UTC));
+      }
+    });
+    dates.sort((a, b) => a - b);
+    if (dates.length < 2) return;
+    // Calculate average gap between referrals
+    let totalGap = 0;
+    for (let i = 1; i < dates.length; i++) {
+      totalGap += (dates[i] - dates[i - 1]) / 86400000;
+    }
+    const avgGapDays = Math.round(totalGap / (dates.length - 1));
+    const daysSinceLast = Math.round((now - dates[dates.length - 1]) / 86400000);
+    const ratio = avgGapDays > 0 ? daysSinceLast / avgGapDays : 0;
+
+    let status = 'regular';
+    if (ratio >= 2) status = 'stalled';
+    else if (ratio >= 1.5) status = 'slowing';
+
+    if (status !== 'regular') {
+      velocityAlerts.push({
+        name: a.name, firm: a.firm, email: a.email, phone: a.phone,
+        count: a.count, avgGapDays, daysSinceLast, status, ratio: Math.round(ratio * 10) / 10,
+      });
+    }
+  });
+  velocityAlerts.sort((a, b) => b.count - a.count);
+
+  // === NEW FEATURE 2: Geographic Targeting ===
+  const casesByState = {};
+  const casesByCity = {};
+  let locatedCount = 0;
+  parsed.forEach(p => {
+    if (p.location) {
+      locatedCount++;
+      const st = p.location.state;
+      casesByState[st] = (casesByState[st] || 0) + 1;
+      const cityKey = `${p.location.city}, ${st}`;
+      casesByCity[cityKey] = (casesByCity[cityKey] || 0) + 1;
+    }
+  });
+  const topCities = Object.entries(casesByCity)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15)
+    .map(([name, count]) => ({ name, count }));
+  const topStates = Object.entries(casesByState)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
+
+  // === NEW FEATURE 3: Opposing Counsel as Leads ===
+  const ocCounts = {};
+  parsed.forEach(p => {
+    if (p.opposingCounsel && p.opposingCounsel !== 'N/A') {
+      const firm = p.opposingFirm || 'Unknown Firm';
+      const key = `${p.opposingCounsel}|||${firm}`;
+      if (!ocCounts[key]) {
+        ocCounts[key] = { name: p.opposingCounsel, firm, count: 0, cases: [] };
+      }
+      ocCounts[key].count++;
+      ocCounts[key].cases.push(p.opp.OPPORTUNITY_NAME);
+    }
+  });
+  const opposingCounselLeads = Object.values(ocCounts)
+    .filter(oc => oc.count >= 1)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 30);
+
+  // === NEW FEATURE 4: Paralegal Tracking ===
+  const paralegals = {};
+  parsed.forEach(p => {
+    if (p.paralegal && p.paralegal.name) {
+      const key = p.paralegal.name.toLowerCase();
+      if (!paralegals[key]) {
+        paralegals[key] = { name: p.paralegal.name, email: p.paralegal.email, firms: new Set(), count: 0 };
+      }
+      paralegals[key].count++;
+      if (p.firm) paralegals[key].firms.add(p.firm);
+      if (p.paralegal.email && !paralegals[key].email) paralegals[key].email = p.paralegal.email;
+    }
+  });
+  const paralegalList = Object.values(paralegals)
+    .map(p => ({ ...p, firms: [...p.firms] }))
+    .sort((a, b) => b.count - a.count);
+
+  // === NEW FEATURE 5: Cross-Sell Opportunities ===
+  const allServiceNames = Object.keys(SERVICE_TYPE_LABELS);
+  const crossSellOpps = [];
+  const allFirmsForCS = Object.values(firmCounts).filter(f => f.count >= 3);
+  allFirmsForCS.forEach(f => {
+    const firmServices = Object.keys(f.services || {});
+    const missing = allServiceNames
+      .filter(s => !firmServices.includes(SERVICE_TYPE_LABELS[s]))
+      .map(s => SERVICE_TYPE_LABELS[s])
+      .filter(s => ['Vocational Evaluation', 'Life Care Plan', 'Economics', 'Loss of Household Services'].includes(s));
+    if (missing.length > 0 && missing.length < 4) {
+      crossSellOpps.push({
+        firm: f.name,
+        count: f.count,
+        currentServices: firmServices,
+        missingServices: missing,
+        attorneyCount: f.attorneys ? (f.attorneys.size || f.attorneys.length) : 0,
+      });
+    }
+  });
+  crossSellOpps.sort((a, b) => b.count - a.count);
+
   // CEO metrics
   const ceoMetrics = {
     currentYear,
@@ -548,6 +717,12 @@ async function generate() {
     warmingReferrers,
     ceoMetrics,
     cooMetrics,
+    // New features
+    velocityAlerts,
+    geographic: { topStates, topCities, locatedCount },
+    opposingCounselLeads,
+    paralegalList,
+    crossSellOpps,
   };
 }
 

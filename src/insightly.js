@@ -180,6 +180,30 @@ async function linkContactToOpportunity(opportunityId, contactId) {
   }
 }
 
+// --- Notes ---
+
+async function addNote(objectType, objectId, title, body) {
+  try {
+    await client.post(`/${objectType}/${objectId}/Notes`, {
+      TITLE: title,
+      BODY: body,
+    });
+  } catch (err) {
+    if (!err.response || err.response.status !== 400) throw err;
+  }
+}
+
+// --- Tags ---
+
+async function addTagToContact(contactId, tagName) {
+  try {
+    await client.post(`/Contacts/${contactId}/Tags`, { TAG_NAME: tagName });
+  } catch (err) {
+    // Tag may already exist
+    if (!err.response || err.response.status !== 400) throw err;
+  }
+}
+
 module.exports = {
   init,
   createProject, updateProject,
@@ -188,4 +212,5 @@ module.exports = {
   searchOrganizations, createOrganization, updateOrganization,
   searchContacts, createContact, updateContact,
   linkContactToOpportunity,
+  addNote, addTagToContact,
 };
