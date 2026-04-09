@@ -10,183 +10,85 @@
       .no-print { display: none !important; }
       body { background: white !important; color: #1a1a2e !important; font-size: 11px; }
       .page-break { page-break-before: always; }
-      .card { box-shadow: none !important; border: 1px solid #ddd !important; background: white !important; }
-      .summary-card { background: #f8f9fa !important; border: 1px solid #ddd !important; }
-      .summary-card .value { background: none !important; -webkit-text-fill-color: #1a1a2e !important; color: #1a1a2e !important; }
+      .card, .summary-card, .action-card { box-shadow: none !important; border: 1px solid #ccc !important; background: #f9fafb !important; }
+      .summary-card .value { background: none !important; -webkit-text-fill-color: #1a1a2e !important; }
       .header { background: white !important; border-bottom: 2px solid #1a1a2e !important; }
       .header h1, .section-title { color: #1a1a2e !important; }
       .header h1 span { color: #2563eb !important; }
-      th { color: #333 !important; }
-      td { color: #444 !important; }
+      th, td { color: #333 !important; }
+      .tab-content { display: block !important; page-break-inside: avoid; }
+      .tab-bar { display: none !important; }
+      .action-card { border-color: #999 !important; }
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      line-height: 1.6;
-    }
-
-    .header {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border-bottom: 1px solid #334155;
-      padding: 2rem 3rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+    .header { background: linear-gradient(135deg, #1e293b, #0f172a); border-bottom: 1px solid #334155; padding: 2rem 3rem; display: flex; justify-content: space-between; align-items: center; }
     .header h1 { font-size: 1.75rem; font-weight: 700; color: #f8fafc; }
     .header h1 span { color: #38bdf8; font-weight: 400; }
     .header-sub { color: #64748b; font-size: 0.85rem; margin-top: 0.25rem; }
-    .header-meta { text-align: right; color: #64748b; font-size: 0.85rem; }
+    .header-meta { text-align: right; }
     .header-meta .date { color: #94a3b8; font-size: 1rem; }
-
     .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2.5rem;
-    }
-    .summary-card {
-      background: #1e293b;
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-      text-align: center;
-      border: 1px solid #334155;
-    }
-    .summary-card .value {
-      font-size: 2rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, #38bdf8, #818cf8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .summary-card .label {
-      font-size: 0.75rem;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-top: 0.25rem;
-    }
-    .summary-card.highlight .value {
-      background: linear-gradient(135deg, #22c55e, #34d399);
-      -webkit-background-clip: text;
-    }
-
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .summary-card { background: #1e293b; border-radius: 0.75rem; padding: 1.25rem; text-align: center; border: 1px solid #334155; }
+    .summary-card .value { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .summary-card .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+    .summary-card.green .value { background: linear-gradient(135deg, #22c55e, #34d399); -webkit-background-clip: text; }
+    .summary-card.red .value { background: linear-gradient(135deg, #ef4444, #f87171); -webkit-background-clip: text; }
+    .summary-card.yellow .value { background: linear-gradient(135deg, #f59e0b, #fbbf24); -webkit-background-clip: text; }
     .section { margin-bottom: 2.5rem; }
-    .section-title {
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: #f8fafc;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid #334155;
-    }
-
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2.5rem;
-    }
-    .card {
-      background: #1e293b;
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      border: 1px solid #334155;
-    }
-    .card h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #94a3b8;
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
+    .section-title { font-size: 1.15rem; font-weight: 600; color: #f8fafc; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #334155; }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+    .card { background: #1e293b; border-radius: 0.75rem; padding: 1.5rem; border: 1px solid #334155; }
+    .card h3 { font-size: 0.9rem; font-weight: 600; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.04em; }
     .card canvas { max-height: 300px; }
     .full-width { grid-column: 1 / -1; }
-
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th {
-      text-align: left;
-      padding: 0.75rem 1rem;
-      color: #64748b;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.7rem;
-      letter-spacing: 0.06em;
-      border-bottom: 2px solid #334155;
-    }
-    td { padding: 0.65rem 1rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+    th { text-align: left; padding: 0.75rem 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; border-bottom: 2px solid #334155; }
+    td { padding: 0.6rem 0.75rem; border-bottom: 1px solid rgba(51,65,85,0.5); color: #cbd5e1; }
     tr:hover td { background: rgba(56, 189, 248, 0.04); }
-
-    .rank {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 24px; height: 24px; border-radius: 50%;
-      font-size: 0.7rem; font-weight: 700;
-    }
-    .rank-1 { background: #fbbf24; color: #1a1a2e; }
-    .rank-2 { background: #94a3b8; color: #1a1a2e; }
-    .rank-3 { background: #cd7f32; color: #1a1a2e; }
-    .rank-other { background: #334155; color: #94a3b8; }
-
-    .badge {
-      display: inline-block; padding: 0.15rem 0.55rem; border-radius: 9999px;
-      font-size: 0.7rem; font-weight: 600;
-    }
-    .badge-blue { background: #1e3a5f; color: #38bdf8; }
-    .badge-green { background: #064e3b; color: #34d399; }
-    .badge-red { background: #450a0a; color: #fca5a5; }
-    .badge-yellow { background: #422006; color: #fbbf24; }
-    .badge-purple { background: #2e1065; color: #a78bfa; }
-
-    .bar-inline { height: 8px; border-radius: 4px; background: #334155; min-width: 60px; }
-    .bar-inline-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #38bdf8, #818cf8); }
-
-    .action-card {
-      background: #1e293b; border: 1px solid #334155;
-      border-left: 4px solid #38bdf8; border-radius: 0 0.75rem 0.75rem 0;
-      padding: 1.25rem; margin-bottom: 1rem;
-    }
-    .action-card h4 { color: #f8fafc; font-size: 0.95rem; margin-bottom: 0.5rem; }
-    .action-card p { color: #94a3b8; font-size: 0.85rem; }
-    .action-card.cold { border-left-color: #ef4444; }
-    .action-card.new { border-left-color: #22c55e; }
-
-    .btn {
-      padding: 0.5rem 1.25rem; border: none; border-radius: 0.375rem;
-      cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: background 0.2s;
-      text-decoration: none; display: inline-block;
-    }
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-primary:hover { background: #2563eb; }
-    .btn-secondary { background: #334155; color: #e2e8f0; }
-    .btn-secondary:hover { background: #475569; }
-
+    .rank { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 0.7rem; font-weight: 700; }
+    .rank-1 { background: #fbbf24; color: #1a1a2e; } .rank-2 { background: #94a3b8; color: #1a1a2e; } .rank-3 { background: #cd7f32; color: #1a1a2e; } .rank-other { background: #334155; color: #94a3b8; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.68rem; font-weight: 600; margin: 1px; }
+    .badge-blue { background: #1e3a5f; color: #38bdf8; } .badge-green { background: #064e3b; color: #34d399; } .badge-red { background: #450a0a; color: #fca5a5; } .badge-yellow { background: #422006; color: #fbbf24; } .badge-purple { background: #2e1065; color: #a78bfa; }
+    .bar-inline { height: 8px; border-radius: 4px; background: #334155; min-width: 60px; } .bar-inline-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #38bdf8, #818cf8); }
+    .action-card { background: #1e293b; border: 1px solid #334155; border-left: 4px solid #38bdf8; border-radius: 0 0.75rem 0.75rem 0; padding: 1.25rem; margin-bottom: 0.75rem; }
+    .action-card h4 { color: #f8fafc; font-size: 0.95rem; margin-bottom: 0.4rem; }
+    .action-card p { color: #94a3b8; font-size: 0.85rem; line-height: 1.5; }
+    .action-card .contact-info { color: #38bdf8; font-size: 0.82rem; margin-top: 0.3rem; }
+    .action-card .contact-info a { color: #38bdf8; text-decoration: none; }
+    .action-card .contact-info a:hover { text-decoration: underline; }
+    .action-card.cold { border-left-color: #ef4444; } .action-card.new { border-left-color: #22c55e; } .action-card.vip { border-left-color: #fbbf24; } .action-card.warm { border-left-color: #818cf8; }
+    .btn { padding: 0.5rem 1.25rem; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: background 0.2s; text-decoration: none; display: inline-block; }
+    .btn-primary { background: #3b82f6; color: white; } .btn-primary:hover { background: #2563eb; }
+    .btn-secondary { background: #334155; color: #e2e8f0; } .btn-secondary:hover { background: #475569; }
     .loading { text-align: center; padding: 4rem; color: #64748b; font-size: 1.1rem; }
-    .loading .spinner {
-      width: 40px; height: 40px; border: 3px solid #334155; border-top-color: #38bdf8;
-      border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem;
-    }
+    .loading .spinner { width: 40px; height: 40px; border: 3px solid #334155; border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .tab-bar { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 2px solid #334155; }
-    .tab {
-      padding: 0.75rem 1.5rem; cursor: pointer; color: #64748b; font-weight: 500;
-      border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s;
-    }
-    .tab:hover { color: #94a3b8; }
-    .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-bar { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 2px solid #334155; overflow-x: auto; }
+    .tab { padding: 0.75rem 1.25rem; cursor: pointer; color: #64748b; font-weight: 500; font-size: 0.9rem; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; white-space: nowrap; }
+    .tab:hover { color: #94a3b8; } .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+    .tab-content { display: none; } .tab-content.active { display: block; }
+    .ceo-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .kpi-card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.5rem; }
+    .kpi-card .kpi-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .kpi-card .kpi-value { font-size: 2.5rem; font-weight: 800; color: #f8fafc; margin: 0.25rem 0; }
+    .kpi-card .kpi-sub { font-size: 0.8rem; color: #94a3b8; }
+    .kpi-card .kpi-trend { font-size: 0.85rem; font-weight: 600; }
+    .kpi-card .kpi-trend.up { color: #22c55e; } .kpi-card .kpi-trend.down { color: #ef4444; } .kpi-card .kpi-trend.neutral { color: #fbbf24; }
+    .exec-section { margin-bottom: 2rem; }
+    .exec-section h3 { font-size: 1rem; font-weight: 600; color: #f8fafc; margin-bottom: 0.75rem; }
+    .exec-insight { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 0.75rem; }
+    .exec-insight .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; margin-bottom: 0.25rem; }
+    .exec-insight .text { color: #e2e8f0; font-size: 0.9rem; }
+    .marketing-category { margin-bottom: 2.5rem; }
+    .marketing-category h3 { display: flex; align-items: center; gap: 0.75rem; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; }
+    .marketing-category .count-badge { background: #334155; color: #94a3b8; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; }
+    .action-priority { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.15rem 0.5rem; border-radius: 0.25rem; }
+    .priority-high { background: #450a0a; color: #fca5a5; } .priority-medium { background: #422006; color: #fbbf24; } .priority-low { background: #064e3b; color: #34d399; }
   </style>
 </head>
 <body>
-
 <div class="header">
   <div>
     <h1>Business Development <span>Report</span></h1>
@@ -195,386 +97,385 @@
   <div class="header-meta">
     <div class="date" id="report-date"></div>
     <div class="no-print" style="margin-top: 0.5rem;">
-      <button class="btn btn-secondary" onclick="window.print()">Print / Export PDF</button>
+      <button class="btn btn-secondary" onclick="window.print()">Print / PDF</button>
       <a href="/" class="btn btn-secondary">Dashboard</a>
     </div>
   </div>
 </div>
-
 <div class="container">
-  <div id="loading" class="loading">
-    <div class="spinner"></div>
-    Generating report from Insightly data...
-  </div>
-
+  <div id="loading" class="loading"><div class="spinner"></div>Generating report from Insightly data...</div>
   <div id="report" style="display:none;">
-
     <div class="summary-grid" id="summary-grid"></div>
-
     <div class="tab-bar no-print">
-      <div class="tab active" onclick="showTab('overview')">Overview</div>
-      <div class="tab" onclick="showTab('cases')">Case Analysis</div>
-      <div class="tab" onclick="showTab('firms')">Firms</div>
-      <div class="tab" onclick="showTab('attorneys')">Attorneys</div>
-      <div class="tab" onclick="showTab('actions')">Marketing Actions</div>
+      <div class="tab active" onclick="showTab('ceo',this)">CEO Report</div>
+      <div class="tab" onclick="showTab('coo',this)">COO Operations</div>
+      <div class="tab" onclick="showTab('marketing',this)">Marketing Actions</div>
+      <div class="tab" onclick="showTab('overview',this)">Analytics</div>
+      <div class="tab" onclick="showTab('cases',this)">Case Analysis</div>
+      <div class="tab" onclick="showTab('firms',this)">Firms</div>
+      <div class="tab" onclick="showTab('attorneys',this)">Attorneys</div>
     </div>
 
-    <!-- OVERVIEW TAB -->
-    <div id="tab-overview" class="tab-content active">
+    <!-- CEO REPORT -->
+    <div id="tab-ceo" class="tab-content active">
+      <div class="section-title" style="margin-bottom:1.5rem;">Executive Summary</div>
+      <div class="ceo-kpi" id="ceo-kpis"></div>
       <div class="charts-grid">
+        <div class="card"><h3>Cases by Year</h3><canvas id="ceo-chart-years"></canvas></div>
+        <div class="card"><h3>Case Portfolio Mix</h3><canvas id="ceo-chart-area"></canvas></div>
+      </div>
+      <div id="ceo-insights"></div>
+      <div class="section page-break" style="margin-top:2rem;">
+        <div class="section-title">Top Revenue Sources</div>
         <div class="card">
-          <h3>Cases by Area</h3>
-          <canvas id="chart-area"></canvas>
-        </div>
-        <div class="card">
-          <h3>Service Types Provided</h3>
-          <canvas id="chart-service"></canvas>
-        </div>
-        <div class="card">
-          <h3>Plaintiff vs Defense</h3>
-          <canvas id="chart-side"></canvas>
-        </div>
-        <div class="card">
-          <h3>Cases by Year</h3>
-          <canvas id="chart-years"></canvas>
-        </div>
-        <div class="card">
-          <h3>Pipeline Status</h3>
-          <canvas id="chart-state"></canvas>
-        </div>
-        <div class="card">
-          <h3>Pipeline Stage</h3>
-          <canvas id="chart-stages"></canvas>
+          <table>
+            <thead><tr><th>#</th><th>Firm</th><th>Cases</th><th>Attorneys</th><th>Trend</th></tr></thead>
+            <tbody id="ceo-firms-table"></tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- CASE ANALYSIS TAB -->
+    <!-- COO OPERATIONS -->
+    <div id="tab-coo" class="tab-content">
+      <div class="section-title" style="margin-bottom:1.5rem;">Operations Dashboard</div>
+      <div class="ceo-kpi" id="coo-kpis"></div>
+      <div class="charts-grid">
+        <div class="card"><h3>Active Cases by Pipeline Stage</h3><canvas id="coo-chart-stages"></canvas></div>
+        <div class="card"><h3>Active Cases by Type</h3><canvas id="coo-chart-area"></canvas></div>
+        <div class="card full-width"><h3>Monthly Case Intake</h3><canvas id="coo-chart-intake" style="max-height:300px;"></canvas></div>
+        <div class="card"><h3>Active — Services Required</h3><canvas id="coo-chart-services"></canvas></div>
+        <div class="card"><h3>Active — Plaintiff vs Defense</h3><canvas id="coo-chart-side"></canvas></div>
+      </div>
+      <div id="coo-insights"></div>
+    </div>
+
+    <!-- MARKETING ACTIONS -->
+    <div id="tab-marketing" class="tab-content">
+      <div class="section-title" style="margin-bottom:0.5rem;">Marketing Action Plan</div>
+      <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:2rem;">Prioritized contact list with emails and recommended next steps. Click any email to open in your mail client.</p>
+
+      <div class="marketing-category" id="mkt-vip"></div>
+      <div class="marketing-category" id="mkt-cold"></div>
+      <div class="marketing-category" id="mkt-warm"></div>
+      <div class="marketing-category" id="mkt-new"></div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div id="tab-overview" class="tab-content">
+      <div class="charts-grid">
+        <div class="card"><h3>Cases by Area</h3><canvas id="chart-area"></canvas></div>
+        <div class="card"><h3>Service Types Provided</h3><canvas id="chart-service"></canvas></div>
+        <div class="card"><h3>Plaintiff vs Defense</h3><canvas id="chart-side"></canvas></div>
+        <div class="card"><h3>Cases by Year</h3><canvas id="chart-years"></canvas></div>
+        <div class="card"><h3>Pipeline Status</h3><canvas id="chart-state"></canvas></div>
+        <div class="card"><h3>Pipeline Stage</h3><canvas id="chart-stages"></canvas></div>
+      </div>
+    </div>
+
+    <!-- CASE ANALYSIS -->
     <div id="tab-cases" class="tab-content">
       <div class="charts-grid">
-        <div class="card full-width">
-          <h3>Year-over-Year by Case Area</h3>
-          <canvas id="chart-year-area" style="max-height:400px;"></canvas>
-        </div>
-        <div class="card">
-          <h3>Plaintiff — Service Breakdown</h3>
-          <canvas id="chart-plt-service"></canvas>
-        </div>
-        <div class="card">
-          <h3>Defense — Service Breakdown</h3>
-          <canvas id="chart-def-service"></canvas>
-        </div>
+        <div class="card full-width"><h3>Year-over-Year by Case Area</h3><canvas id="chart-year-area" style="max-height:400px;"></canvas></div>
+        <div class="card"><h3>Plaintiff Services</h3><canvas id="chart-plt-service"></canvas></div>
+        <div class="card"><h3>Defense Services</h3><canvas id="chart-def-service"></canvas></div>
       </div>
     </div>
 
-    <!-- FIRMS TAB -->
+    <!-- FIRMS -->
     <div id="tab-firms" class="tab-content">
-      <div class="section">
-        <div class="card">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:40px;">#</th>
-                <th>Firm</th>
-                <th>Cases</th>
-                <th>Attorneys</th>
-                <th>Case Types</th>
-                <th>Services</th>
-                <th style="width:120px;">Volume</th>
-              </tr>
-            </thead>
-            <tbody id="firms-table"></tbody>
-          </table>
-        </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>#</th><th>Firm</th><th>Cases</th><th>Attorneys</th><th>Case Types</th><th>Services</th><th>Volume</th></tr></thead>
+          <tbody id="firms-table"></tbody>
+        </table>
       </div>
     </div>
 
-    <!-- ATTORNEYS TAB -->
+    <!-- ATTORNEYS -->
     <div id="tab-attorneys" class="tab-content">
-      <div class="section">
-        <div class="card">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:40px;">#</th>
-                <th>Attorney</th>
-                <th>Firm</th>
-                <th>Cases</th>
-                <th>Case Types</th>
-                <th>Services</th>
-                <th style="width:120px;">Volume</th>
-              </tr>
-            </thead>
-            <tbody id="attorneys-table"></tbody>
-          </table>
-        </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>#</th><th>Attorney</th><th>Firm</th><th>Email</th><th>Cases</th><th>Types</th><th>Volume</th></tr></thead>
+          <tbody id="attorneys-table"></tbody>
+        </table>
       </div>
     </div>
-
-    <!-- MARKETING ACTIONS TAB -->
-    <div id="tab-actions" class="tab-content">
-      <div class="section">
-        <div class="section-title" style="color:#ef4444;">Re-Engage — Haven't Referred in 90+ Days</div>
-        <div id="cold-list"></div>
-      </div>
-      <div class="section">
-        <div class="section-title" style="color:#22c55e;">Nurture — Recent First-Time Referrers</div>
-        <div id="new-list"></div>
-      </div>
-    </div>
-
   </div>
 </div>
 
 <script>
-  const COLORS = {
-    blue: '#38bdf8', purple: '#818cf8', green: '#34d399', yellow: '#fbbf24',
-    red: '#f87171', orange: '#fb923c', pink: '#f472b6', teal: '#2dd4bf',
-    indigo: '#a78bfa', slate: '#64748b', cyan: '#22d3ee', lime: '#a3e635',
-    amber: '#f59e0b', rose: '#fb7185',
-  };
-  const PALETTE = Object.values(COLORS);
+const COLORS = { blue:'#38bdf8',purple:'#818cf8',green:'#34d399',yellow:'#fbbf24',red:'#f87171',orange:'#fb923c',pink:'#f472b6',teal:'#2dd4bf',indigo:'#a78bfa',slate:'#64748b',cyan:'#22d3ee',lime:'#a3e635',amber:'#f59e0b',rose:'#fb7185' };
+const PALETTE = Object.values(COLORS);
+Chart.defaults.color = '#94a3b8'; Chart.defaults.borderColor = '#334155'; Chart.defaults.font.family = "'Segoe UI', sans-serif";
+document.getElementById('report-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-  Chart.defaults.color = '#94a3b8';
-  Chart.defaults.borderColor = '#334155';
-  Chart.defaults.font.family = "'Segoe UI', sans-serif";
+function showTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(el)el.classList.add('active');
+}
 
-  document.getElementById('report-date').textContent = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+async function loadReport() {
+  const res = await fetch('/api/report');
+  const data = await res.json();
+  document.getElementById('loading').style.display='none';
+  document.getElementById('report').style.display='block';
+  renderSummary(data.summary);
+  renderCEO(data);
+  renderCOO(data);
+  renderMarketing(data);
+  renderDoughnut('chart-area',data.casesByArea);
+  renderDoughnut('chart-service',data.casesByService);
+  renderDoughnut('chart-side',data.casesBySide,{Plaintiff:COLORS.blue,Defense:COLORS.red,'Not Specified':COLORS.slate});
+  renderBarChart('chart-years',data.casesByYear,true);
+  renderDoughnut('chart-state',data.casesByState,{OPEN:COLORS.blue,WON:COLORS.green});
+  renderHorizontalBar('chart-stages',data.casesByStage);
+  renderYearByArea('chart-year-area',data.yearByArea);
+  renderServiceBySide('chart-plt-service',data.serviceBySide['Plaintiff']||{});
+  renderServiceBySide('chart-def-service',data.serviceBySide['Defense']||{});
+  renderFirmsTable(data.topFirms);
+  renderAttorneysTable(data.topAttorneys);
+}
+
+function renderSummary(s) {
+  document.getElementById('summary-grid').innerHTML = [
+    {v:s.totalOpportunities,l:'Total Cases'},
+    {v:s.openCases,l:'Open'},
+    {v:s.wonCases,l:'Completed'},
+    {v:s.uniqueAttorneys,l:'Attorneys'},
+    {v:s.uniqueFirms,l:'Firms'},
+    {v:s.classificationRate+'%',l:'Classified',c:'green'},
+  ].map(c=>`<div class="summary-card ${c.c||''}"><div class="value">${typeof c.v==='number'?c.v.toLocaleString():c.v}</div><div class="label">${c.l}</div></div>`).join('');
+}
+
+// === CEO TAB ===
+function renderCEO(data) {
+  const m = data.ceoMetrics;
+  const s = data.summary;
+  const trendIcon = m.yoyGrowth > 0 ? '&#9650;' : m.yoyGrowth < 0 ? '&#9660;' : '&#9644;';
+  const trendClass = m.yoyGrowth > 0 ? 'up' : m.yoyGrowth < 0 ? 'down' : 'neutral';
+
+  document.getElementById('ceo-kpis').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total Cases (All Time)</div>
+      <div class="kpi-value">${s.totalOpportunities.toLocaleString()}</div>
+      <div class="kpi-sub">${s.openCases} active &bull; ${s.wonCases} completed</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">${m.currentYear} Cases (YTD)</div>
+      <div class="kpi-value">${m.currentYearCases}</div>
+      <div class="kpi-trend ${trendClass}">${trendIcon} ${Math.abs(m.yoyGrowth)}% vs ${m.prevYear} (${m.prevYearCases})</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Completion Rate</div>
+      <div class="kpi-value">${m.completionRate}%</div>
+      <div class="kpi-sub">${s.wonCases} of ${s.totalOpportunities} cases completed</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Plaintiff / Defense Split</div>
+      <div class="kpi-value">${m.pltPct}/${m.defPct}</div>
+      <div class="kpi-sub">Balanced portfolio</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Referral Network</div>
+      <div class="kpi-value">${s.uniqueFirms}</div>
+      <div class="kpi-sub">${s.uniqueAttorneys} attorneys across ${s.uniqueFirms} firms</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Top 5 Firm Concentration</div>
+      <div class="kpi-value">${m.concentrationPct}%</div>
+      <div class="kpi-sub">${m.concentrationPct > 30 ? 'Moderate concentration — consider diversifying' : 'Well diversified referral base'}</div>
+    </div>
+  `;
+
+  // CEO charts
+  renderBarChart('ceo-chart-years', data.casesByYear, true);
+  renderDoughnut('ceo-chart-area', data.casesByArea);
+
+  // Insights
+  const topArea = m.topArea ? m.topArea.name : 'N/A';
+  const topAreaPct = m.topArea ? Math.round(m.topArea.count / s.totalOpportunities * 100) : 0;
+  document.getElementById('ceo-insights').innerHTML = `
+    <div class="exec-section">
+      <h3>Key Insights</h3>
+      <div class="exec-insight">
+        <div class="label">Business Mix</div>
+        <div class="text">${topArea} represents ${topAreaPct}% of all cases (${m.topArea?m.topArea.count:0} cases). Matrimonial and Employment together account for the remaining specialized work. The plaintiff/defense split of ${m.pltPct}/${m.defPct} indicates a balanced practice serving both sides.</div>
+      </div>
+      <div class="exec-insight">
+        <div class="label">Growth Trajectory</div>
+        <div class="text">${m.yoyGrowth >= 0 ? `Case volume is ${m.yoyGrowth > 0 ? 'up' : 'flat'} ${Math.abs(m.yoyGrowth)}% year-over-year (${m.currentYearCases} in ${m.currentYear} vs ${m.prevYearCases} in ${m.prevYear}).` : `Case volume declined ${Math.abs(m.yoyGrowth)}% (${m.currentYearCases} in ${m.currentYear} vs ${m.prevYearCases} in ${m.prevYear}). Review marketing efforts and referral outreach.`}</div>
+      </div>
+      <div class="exec-insight">
+        <div class="label">Referral Concentration</div>
+        <div class="text">The top 5 firms account for ${m.concentrationPct}% of referred cases. ${m.concentrationPct > 30 ? 'This creates some dependency risk. Expanding relationships with mid-tier referrers would improve resilience.' : 'The referral base is well-diversified across many firms, reducing dependency risk.'}</div>
+      </div>
+      <div class="exec-insight">
+        <div class="label">Service Portfolio</div>
+        <div class="text">Vocational Evaluations remain the primary service. Life Care Plans are a strong secondary line. Economics and Loss of Household Services represent growth opportunities for cross-selling to existing referral relationships.</div>
+      </div>
+    </div>
+  `;
+
+  // CEO top firms
+  document.getElementById('ceo-firms-table').innerHTML = m.top5Firms.map((f,i) => `
+    <tr>
+      <td>${rankBadge(i)}</td>
+      <td><strong>${f.name}</strong></td>
+      <td>${f.count}</td>
+      <td>${f.attorneyCount}</td>
+      <td>${barInline(f.count, m.top5Firms[0].count)}</td>
+    </tr>
+  `).join('');
+}
+
+// === COO TAB ===
+function renderCOO(data) {
+  const c = data.cooMetrics;
+  const s = data.summary;
+  const bn = c.bottleneckStage;
+
+  document.getElementById('coo-kpis').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Active Cases</div>
+      <div class="kpi-value">${c.openCases}</div>
+      <div class="kpi-sub">Currently in pipeline</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Completed Cases</div>
+      <div class="kpi-value">${c.completedCases}</div>
+      <div class="kpi-sub">${c.completionRate}% completion rate</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Monthly Intake (${data.ceoMetrics.currentYear})</div>
+      <div class="kpi-value">${c.avgMonthlyIntake}</div>
+      <div class="kpi-sub">Cases per month this year</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Plt / Def Active Split</div>
+      <div class="kpi-value">${c.openBySide.Plaintiff} / ${c.openBySide.Defense}</div>
+      <div class="kpi-sub">Active plaintiff vs defense cases</div>
+    </div>
+    ${bn ? `<div class="kpi-card">
+      <div class="kpi-label">Pipeline Bottleneck</div>
+      <div class="kpi-value" style="font-size:1.5rem;">${bn[0]}</div>
+      <div class="kpi-sub">${bn[1]} cases at this stage</div>
+    </div>` : ''}
+  `;
+
+  renderHorizontalBar('coo-chart-stages', c.openByStage);
+  renderDoughnut('coo-chart-area', c.openByArea);
+  renderDoughnut('coo-chart-services', c.openByService);
+  renderDoughnut('coo-chart-side', c.openBySide, {Plaintiff:COLORS.blue, Defense:COLORS.red});
+
+  // Monthly intake chart
+  const months = Object.keys(c.monthlyIntake).sort().slice(-12);
+  new Chart(document.getElementById('coo-chart-intake'), {
+    type: 'line',
+    data: {
+      labels: months.map(m => { const [y,mo]=m.split('-'); return new Date(y,mo-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'}); }),
+      datasets: [{
+        label: 'Cases Opened',
+        data: months.map(m => c.monthlyIntake[m]),
+        borderColor: COLORS.blue,
+        backgroundColor: 'rgba(56,189,248,0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: COLORS.blue,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
+    }
   });
 
-  function showTab(name) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    event.target.classList.add('active');
-  }
-
-  async function loadReport() {
-    const res = await fetch('/api/report');
-    const data = await res.json();
-
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('report').style.display = 'block';
-
-    renderSummary(data.summary);
-    renderDoughnut('chart-area', data.casesByArea);
-    renderDoughnut('chart-service', data.casesByService);
-    renderDoughnut('chart-side', data.casesBySide, { Plaintiff: COLORS.blue, Defense: COLORS.red, 'Not Specified': COLORS.slate });
-    renderBarChart('chart-years', data.casesByYear, true);
-    renderDoughnut('chart-state', data.casesByState, { OPEN: COLORS.blue, WON: COLORS.green, LOST: COLORS.red });
-    renderHorizontalBar('chart-stages', data.casesByStage);
-    renderYearByArea('chart-year-area', data.yearByArea);
-    renderServiceBySide('chart-plt-service', data.serviceBySide['Plaintiff'] || {});
-    renderServiceBySide('chart-def-service', data.serviceBySide['Defense'] || {});
-    renderFirmsTable(data.topFirms);
-    renderAttorneysTable(data.topAttorneys);
-    renderColdList(data.coldAttorneys);
-    renderNewList(data.newReferrers);
-  }
-
-  function renderSummary(s) {
-    const cards = [
-      { value: s.totalOpportunities, label: 'Total Cases' },
-      { value: s.openCases, label: 'Open Cases' },
-      { value: s.wonCases, label: 'Completed' },
-      { value: s.uniqueAttorneys, label: 'Referring Attorneys' },
-      { value: s.uniqueFirms, label: 'Referring Firms' },
-      { value: s.classificationRate + '%', label: 'Cases Classified', cls: 'highlight' },
-    ];
-    document.getElementById('summary-grid').innerHTML = cards.map(c => `
-      <div class="summary-card ${c.cls||''}">
-        <div class="value">${typeof c.value === 'number' ? c.value.toLocaleString() : c.value}</div>
-        <div class="label">${c.label}</div>
+  // COO insights
+  const stageEntries = Object.entries(c.openByStage).sort((a,b) => b[1] - a[1]);
+  document.getElementById('coo-insights').innerHTML = `
+    <div class="exec-section">
+      <h3>Operational Insights</h3>
+      <div class="exec-insight">
+        <div class="label">Pipeline Health</div>
+        <div class="text">${c.openCases} cases are currently active with a ${c.completionRate}% overall completion rate. ${bn ? `The "${bn[0]}" stage has the most cases (${bn[1]}), which may indicate a capacity constraint or normal accumulation point.` : ''}</div>
       </div>
-    `).join('');
-  }
-
-  function renderDoughnut(id, data, colorMap) {
-    const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]);
-    const labels = sorted.map(s => s[0]);
-    const values = sorted.map(s => s[1]);
-    new Chart(document.getElementById(id), {
-      type: 'doughnut',
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          backgroundColor: colorMap ? labels.map((l,i) => colorMap[l] || PALETTE[i % PALETTE.length]) : PALETTE,
-          borderWidth: 0,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'right', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } }
-      }
-    });
-  }
-
-  function renderBarChart(id, data, filterUnknown) {
-    let labels = Object.keys(data);
-    if (filterUnknown) labels = labels.filter(k => k !== 'Unknown');
-    labels.sort();
-    new Chart(document.getElementById(id), {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Cases',
-          data: labels.map(l => data[l]),
-          backgroundColor: 'rgba(56, 189, 248, 0.7)',
-          borderRadius: 6, borderSkipped: false,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
-      }
-    });
-  }
-
-  function renderHorizontalBar(id, data) {
-    const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]);
-    new Chart(document.getElementById(id), {
-      type: 'bar',
-      data: {
-        labels: sorted.map(s => s[0].length > 30 ? s[0].slice(0,30)+'...' : s[0]),
-        datasets: [{
-          data: sorted.map(s => s[1]),
-          backgroundColor: PALETTE, borderRadius: 6, borderSkipped: false,
-        }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true }, y: { grid: { display: false } } }
-      }
-    });
-  }
-
-  function renderYearByArea(id, yearByArea) {
-    const years = Object.keys(yearByArea).filter(y => y !== 'null').sort();
-    const allAreas = new Set();
-    years.forEach(y => Object.keys(yearByArea[y]).forEach(a => allAreas.add(a)));
-    const areas = [...allAreas].filter(a => a !== 'Unknown');
-
-    const datasets = areas.map((area, i) => ({
-      label: area,
-      data: years.map(y => yearByArea[y][area] || 0),
-      backgroundColor: PALETTE[i % PALETTE.length],
-      borderRadius: 4,
-    }));
-
-    new Chart(document.getElementById(id), {
-      type: 'bar',
-      data: { labels: years, datasets },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11 } } } },
-        scales: {
-          x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, beginAtZero: true },
-        }
-      }
-    });
-  }
-
-  function renderServiceBySide(id, data) {
-    const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]).slice(0, 8);
-    if (!sorted.length) {
-      document.getElementById(id).parentElement.innerHTML += '<p style="color:#64748b;text-align:center;">No data</p>';
-      return;
-    }
-    new Chart(document.getElementById(id), {
-      type: 'bar',
-      data: {
-        labels: sorted.map(s => s[0].length > 25 ? s[0].slice(0,25)+'...' : s[0]),
-        datasets: [{ data: sorted.map(s => s[1]), backgroundColor: PALETTE, borderRadius: 6, borderSkipped: false }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true }, y: { grid: { display: false } } }
-      }
-    });
-  }
-
-  function rankBadge(i) {
-    const cls = i===0 ? 'rank-1' : i===1 ? 'rank-2' : i===2 ? 'rank-3' : 'rank-other';
-    return `<span class="rank ${cls}">${i+1}</span>`;
-  }
-
-  function barInline(v, max) {
-    return `<div class="bar-inline"><div class="bar-inline-fill" style="width:${max>0?(v/max*100):0}%"></div></div>`;
-  }
-
-  function badges(obj, cls) {
-    return Object.entries(obj).filter(([k]) => k !== 'Unknown' && k !== 'Not Specified')
-      .map(([k,v]) => `<span class="badge ${cls}">${k}: ${v}</span>`).join(' ');
-  }
-
-  function renderFirmsTable(firms) {
-    const max = firms[0]?.count || 1;
-    document.getElementById('firms-table').innerHTML = firms.map((f, i) => `
-      <tr>
-        <td>${rankBadge(i)}</td>
-        <td><strong>${f.name}</strong></td>
-        <td>${f.count}</td>
-        <td>${f.attorneyCount}</td>
-        <td>${badges(f.caseTypes, 'badge-blue')}</td>
-        <td>${badges(f.services, 'badge-purple')}</td>
-        <td>${barInline(f.count, max)}</td>
-      </tr>
-    `).join('');
-  }
-
-  function renderAttorneysTable(attorneys) {
-    const max = attorneys[0]?.count || 1;
-    document.getElementById('attorneys-table').innerHTML = attorneys.map((a, i) => `
-      <tr>
-        <td>${rankBadge(i)}</td>
-        <td><strong>${a.name}</strong></td>
-        <td>${a.firm}</td>
-        <td>${a.count}</td>
-        <td>${badges(a.caseTypes, 'badge-blue')}</td>
-        <td>${badges(a.services, 'badge-purple')}</td>
-        <td>${barInline(a.count, max)}</td>
-      </tr>
-    `).join('');
-  }
-
-  function renderColdList(cold) {
-    if (!cold.length) {
-      document.getElementById('cold-list').innerHTML = '<div class="action-card"><p>No cold referral sources detected. All repeat referrers are active.</p></div>';
-      return;
-    }
-    document.getElementById('cold-list').innerHTML = cold.map(a => {
-      const days = Math.floor((new Date() - new Date(a.lastReferral)) / 86400000);
-      return `
-        <div class="action-card cold">
-          <h4>${a.name} <span class="badge badge-red">${days} days since last referral</span></h4>
-          <p><strong>${a.firm}</strong> &mdash; ${a.count} total cases. ${badges(a.caseTypes,'badge-blue')} ${badges(a.services,'badge-purple')}<br>
-          <em>Action: Schedule a call or lunch to reconnect.</em></p>
-        </div>`;
-    }).join('');
-  }
-
-  function renderNewList(newRefs) {
-    if (!newRefs.length) {
-      document.getElementById('new-list').innerHTML = '<div class="action-card"><p>No recent first-time referrers to show.</p></div>';
-      return;
-    }
-    document.getElementById('new-list').innerHTML = newRefs.map(a => `
-      <div class="action-card new">
-        <h4>${a.name} <span class="badge badge-green">First referral</span></h4>
-        <p><strong>${a.firm}</strong> &mdash; Case: ${a.cases[0]}. ${badges(a.caseTypes,'badge-blue')}<br>
-        <em>Action: Send a thank-you note and schedule an intro meeting.</em></p>
+      <div class="exec-insight">
+        <div class="label">Intake Volume</div>
+        <div class="text">Averaging ${c.avgMonthlyIntake} new cases per month in ${data.ceoMetrics.currentYear}. ${c.avgMonthlyIntake > 30 ? 'High intake volume — ensure staffing keeps pace.' : c.avgMonthlyIntake > 15 ? 'Steady intake volume.' : 'Lower intake — may need marketing push.'}</div>
       </div>
-    `).join('');
-  }
+      <div class="exec-insight">
+        <div class="label">Workload Balance</div>
+        <div class="text">Active cases split: ${c.openBySide.Plaintiff} plaintiff, ${c.openBySide.Defense} defense. ${Math.abs(c.openBySide.Plaintiff - c.openBySide.Defense) > 20 ? 'Significant imbalance — check if team capacity matches the heavier side.' : 'Relatively balanced workload across both sides.'}</div>
+      </div>
+      ${stageEntries.length > 1 ? `<div class="exec-insight">
+        <div class="label">Stage Distribution</div>
+        <div class="text">Top stages: ${stageEntries.slice(0,3).map(([s,n]) => `${s} (${n})`).join(', ')}. Review cases stuck at early stages for potential follow-up actions.</div>
+      </div>` : ''}
+    </div>
+  `;
+}
 
-  loadReport();
+// === MARKETING TAB ===
+function renderMarketing(data) {
+  renderMarketingCategory('mkt-vip', 'VIP Referrers — Protect & Deepen', data.vipReferrers, 'vip', '#fbbf24',
+    'These are your highest-value relationships. Priority: retention, gratitude, and asking for introductions to colleagues.',
+    a => `<em>Action:</em> Schedule quarterly lunch/dinner. Send case outcome updates. Ask for introductions to other attorneys at their firm.`
+  );
+  renderMarketingCategory('mkt-cold', 'Gone Cold — Re-Engage', data.coldAttorneys, 'cold', '#ef4444',
+    'Previously active referrers who haven\'t sent a case in 90+ days. These already know your work — a simple check-in can reactivate them.',
+    a => { const days = Math.floor((new Date()-new Date(a.lastReferral))/86400000); return `<em>Action:</em> Personal call or email. "${a.name}, we enjoyed working on the ${a.cases[a.cases.length-1]} matter. Wanted to check in — anything we can help with?" <span class="badge badge-red">${days} days since last referral</span>`; }
+  );
+  renderMarketingCategory('mkt-warm', 'Warming Up — Grow the Relationship', data.warmingReferrers, 'warm', '#818cf8',
+    'Attorneys who\'ve referred 2-4 times recently. They like your work — invest in making them regular referrers.',
+    a => `<em>Action:</em> Send a thank-you note. Share a relevant article or CLE invite. Add to newsletter list.`
+  );
+  renderMarketingCategory('mkt-new', 'First-Time Referrers — Make a Great Impression', data.newReferrers.slice(0,20), 'new', '#22c55e',
+    'These attorneys just sent their first case. The next 30 days determine if they become repeat referrers.',
+    a => `<em>Action:</em> Send a thank-you within 48 hours. After report delivery, follow up: "How did the ${a.cases[0]} report work for your case?"`
+  );
+}
+
+function renderMarketingCategory(containerId, title, list, cardClass, color, description, actionFn) {
+  const el = document.getElementById(containerId);
+  if (!list || !list.length) {
+    el.innerHTML = `<h3 style="color:${color}">${title} <span class="count-badge">0</span></h3><div class="action-card"><p>No contacts in this category.</p></div>`;
+    return;
+  }
+  el.innerHTML = `
+    <h3 style="color:${color}">${title} <span class="count-badge">${list.length}</span></h3>
+    <p style="color:#64748b;font-size:0.82rem;margin-bottom:1rem;">${description}</p>
+    ${list.map(a => `
+      <div class="action-card ${cardClass}">
+        <h4>${a.name} &mdash; <span style="color:#94a3b8;font-weight:400;">${a.firm}</span> <span class="badge badge-blue">${a.count} case${a.count>1?'s':''}</span></h4>
+        <p>${actionFn(a)}</p>
+        <div class="contact-info">
+          ${a.email ? `<a href="mailto:${a.email}">${a.email}</a>` : '<span style="color:#475569">No email on file</span>'}
+          ${a.phone ? ` &bull; ${a.phone}` : ''}
+          ${Object.keys(a.caseTypes||{}).filter(k=>k!=='Unknown').length ? ' &bull; '+Object.entries(a.caseTypes).filter(([k])=>k!=='Unknown').map(([k,v])=>`<span class="badge badge-blue">${k}</span>`).join('') : ''}
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// === CHART HELPERS ===
+function renderDoughnut(id,data,colorMap){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);new Chart(document.getElementById(id),{type:'doughnut',data:{labels:s.map(x=>x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:colorMap?s.map((x,i)=>colorMap[x[0]]||PALETTE[i%PALETTE.length]):PALETTE,borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{padding:12,usePointStyle:true,font:{size:11}}}}}});}
+function renderBarChart(id,data,filterUnknown){let l=Object.keys(data);if(filterUnknown)l=l.filter(k=>k!=='Unknown');l.sort();new Chart(document.getElementById(id),{type:'bar',data:{labels:l,datasets:[{label:'Cases',data:l.map(k=>data[k]),backgroundColor:'rgba(56,189,248,0.7)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});}
+function renderHorizontalBar(id,data){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(x=>x[0].length>30?x[0].slice(0,30)+'...':x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}}});}
+function renderYearByArea(id,yba){const yrs=Object.keys(yba).filter(y=>y!=='null').sort();const areas=new Set();yrs.forEach(y=>Object.keys(yba[y]).forEach(a=>areas.add(a)));const a=[...areas].filter(x=>x!=='Unknown');const ds=a.map((area,i)=>({label:area,data:yrs.map(y=>yba[y][area]||0),backgroundColor:PALETTE[i%PALETTE.length],borderRadius:4}));new Chart(document.getElementById(id),{type:'bar',data:{labels:yrs,datasets:ds},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true,font:{size:11}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true}}}});}
+function renderServiceBySide(id,data){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,8);if(!s.length){document.getElementById(id).parentElement.innerHTML+='<p style="color:#64748b;text-align:center">No data</p>';return;}new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(x=>x[0].length>25?x[0].slice(0,25)+'...':x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}}});}
+function rankBadge(i){return `<span class="rank ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other'}">${i+1}</span>`;}
+function barInline(v,max){return `<div class="bar-inline"><div class="bar-inline-fill" style="width:${max>0?(v/max*100):0}%"></div></div>`;}
+function badges(obj,cls){return Object.entries(obj).filter(([k])=>k!=='Unknown'&&k!=='Not Specified').map(([k,v])=>`<span class="badge ${cls}">${k}: ${v}</span>`).join(' ');}
+
+function renderFirmsTable(firms){const max=firms[0]?.count||1;document.getElementById('firms-table').innerHTML=firms.map((f,i)=>`<tr><td>${rankBadge(i)}</td><td><strong>${f.name}</strong></td><td>${f.count}</td><td>${f.attorneyCount}</td><td>${badges(f.caseTypes,'badge-blue')}</td><td>${badges(f.services,'badge-purple')}</td><td>${barInline(f.count,max)}</td></tr>`).join('');}
+function renderAttorneysTable(atts){const max=atts[0]?.count||1;document.getElementById('attorneys-table').innerHTML=atts.map((a,i)=>`<tr><td>${rankBadge(i)}</td><td><strong>${a.name}</strong></td><td>${a.firm}</td><td>${a.email?`<a href="mailto:${a.email}" style="color:#38bdf8">${a.email}</a>`:'<span style="color:#475569">—</span>'}</td><td>${a.count}</td><td>${badges(a.caseTypes,'badge-blue')}</td><td>${barInline(a.count,max)}</td></tr>`).join('');}
+
+loadReport();
 </script>
 </body>
 </html>

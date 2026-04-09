@@ -183,7 +183,6 @@ function parseAttorney(details) {
   const match = details.match(/(?:Atty|Attorney)\s*:\s*(.+)/i);
   if (match) {
     let name = match[1].replace(/,?\s*Esq\.?$/i, '').replace(/,?\s*Associate$/i, '').trim();
-    // Stop at parentheses or other junk
     name = name.split(/\s*\(/).shift().trim();
     return name || null;
   }
@@ -195,6 +194,41 @@ function parseFirm(details) {
   if (!details) return null;
   const match = details.match(/Firm\s*:\s*(.+)/i);
   if (match) return match[1].trim();
+  return null;
+}
+
+// Parse email from details
+function parseEmail(details) {
+  if (!details) return null;
+  // Look for Email: or E: lines before the Para section
+  const lines = details.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (/^Para\s*:/i.test(line)) break; // stop at paralegal section
+    const emailMatch = line.match(/(?:Email|E)\s*:\s*([\w.+\-]+@[\w.\-]+\.\w+)/i);
+    if (emailMatch) return emailMatch[1];
+  }
+  // Fallback: find any email in the first 8 lines
+  for (let i = 0; i < Math.min(8, lines.length); i++) {
+    const m = lines[i].match(/([\w.+\-]+@[\w.\-]+\.\w+)/);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// Parse phone from details
+function parsePhone(details) {
+  if (!details) return null;
+  const lines = details.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (/^Para\s*:/i.test(line)) break;
+    const phoneMatch = line.match(/(?:Direct|Tel|T|Phone|O|Main)\s*:\s*(.+)/i);
+    if (phoneMatch) {
+      const val = phoneMatch[1].trim();
+      if (val && val.length > 5) return val;
+    }
+  }
   return null;
 }
 
@@ -221,6 +255,8 @@ async function generate() {
     case: parseCase(o.OPPORTUNITY_DETAILS),
     attorney: parseAttorney(o.OPPORTUNITY_DETAILS),
     firm: parseFirm(o.OPPORTUNITY_DETAILS),
+    email: parseEmail(o.OPPORTUNITY_DETAILS),
+    phone: parsePhone(o.OPPORTUNITY_DETAILS),
   }));
 
   // --- Aggregations ---
@@ -299,8 +335,10 @@ async function generate() {
       const firm = p.firm || 'Unknown Firm';
       const key = `${p.attorney}|||${firm}`;
       if (!attorneyCounts[key]) {
-        attorneyCounts[key] = { name: p.attorney, firm, count: 0, cases: [], caseTypes: {}, services: {}, lastReferral: null };
+        attorneyCounts[key] = { name: p.attorney, firm, email: null, phone: null, count: 0, cases: [], caseTypes: {}, services: {}, lastReferral: null };
       }
+      if (p.email && !attorneyCounts[key].email) attorneyCounts[key].email = p.email;
+      if (p.phone && !attorneyCounts[key].phone) attorneyCounts[key].phone = p.phone;
       attorneyCounts[key].count++;
       attorneyCounts[key].cases.push(p.opp.OPPORTUNITY_NAME);
       const area = getCaseTypeLabel(p.case);
@@ -343,21 +381,59 @@ async function generate() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 25);
 
-  // 11. Cold referrers
+  // 11. Marketing action lists (with emails)
   const now = new Date();
-  const coldAttorneys = Object.values(attorneyCounts)
+  const allAttorneys = Object.values(attorneyCounts);
+
+  // Cold: referred 2+ times but nothing in 90+ days
+  const coldAttorneys = allAttorneys
     .filter(a => {
       const daysSince = (now - a.lastReferral) / (1000 * 60 * 60 * 24);
       return daysSince > 90 && a.count >= 2;
     })
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 15);
+    .sort((a, b) => b.count - a.count);
 
-  // 12. New referrers
-  const newReferrers = Object.values(attorneyCounts)
+  // New: first-time referrers (most recent first)
+  const newReferrers = allAttorneys
     .filter(a => a.count === 1)
-    .sort((a, b) => b.lastReferral - a.lastReferral)
-    .slice(0, 15);
+    .sort((a, b) => b.lastReferral - a.lastReferral);
+
+  // VIP: top referrers (5+ cases) — nurture and protect
+  const vipReferrers = allAttorneys
+    .filter(a => a.count >= 5)
+    .sort((a, b) => b.count - a.count);
+
+  // Warming: referred 2-4 times, last referral within 180 days — potential to grow
+  const warmingReferrers = allAttorneys
+    .filter(a => {
+      const daysSince = (now - a.lastReferral) / (1000 * 60 * 60 * 24);
+      return a.count >= 2 && a.count <= 4 && daysSince <= 180;
+    })
+    .sort((a, b) => b.count - a.count);
+
+  // CEO: Year-over-year growth
+  const yearKeys = Object.keys(casesByYear).filter(k => k !== 'Unknown').map(Number).sort();
+  const currentYear = yearKeys[yearKeys.length - 1];
+  const prevYear = yearKeys[yearKeys.length - 2];
+  const currentYearCases = casesByYear[currentYear] || 0;
+  const prevYearCases = casesByYear[prevYear] || 0;
+  const yoyGrowth = prevYearCases > 0 ? Math.round((currentYearCases - prevYearCases) / prevYearCases * 100) : 0;
+
+  // CEO: Plaintiff/Defense split percentages
+  const totalWithSide = (casesBySide['Plaintiff'] || 0) + (casesBySide['Defense'] || 0);
+  const pltPct = totalWithSide > 0 ? Math.round((casesBySide['Plaintiff'] || 0) / totalWithSide * 100) : 0;
+  const defPct = totalWithSide > 0 ? Math.round((casesBySide['Defense'] || 0) / totalWithSide * 100) : 0;
+
+  // CEO: Top case area
+  const topArea = Object.entries(casesByArea)
+    .filter(([k]) => k !== 'Unknown')
+    .sort((a, b) => b[1] - a[1])[0];
+
+  // CEO: Concentration risk — what % of cases come from top 5 firms
+  const allFirmsList = Object.values(firmCounts).sort((a, b) => b.count - a.count);
+  const top5FirmCases = allFirmsList.slice(0, 5).reduce((sum, f) => sum + f.count, 0);
+  const totalFirmCases = allFirmsList.reduce((sum, f) => sum + f.count, 0);
+  const concentrationPct = totalFirmCases > 0 ? Math.round(top5FirmCases / totalFirmCases * 100) : 0;
 
   // 13. Summary
   const classifiedCount = parsed.filter(p => getCaseTypeLabel(p.case) !== 'Unknown').length;
@@ -376,6 +452,84 @@ async function generate() {
 
   log.info(`Report generated — ${summary.classificationRate}% cases classified`);
 
+  // COO metrics: operations, throughput, bottlenecks
+  const openByStage = {};
+  const openByArea = {};
+  parsed.forEach(p => {
+    if (p.opp.OPPORTUNITY_STATE === 'OPEN') {
+      const stage = p.opp.STAGE_ID ? (stageMap[p.opp.STAGE_ID] || {}).STAGE_NAME || 'Unknown' : 'No Stage';
+      openByStage[stage] = (openByStage[stage] || 0) + 1;
+      const area = getCaseTypeLabel(p.case);
+      openByArea[area] = (openByArea[area] || 0) + 1;
+    }
+  });
+
+  // Cases by side for open only
+  const openBySide = { Plaintiff: 0, Defense: 0 };
+  parsed.forEach(p => {
+    if (p.opp.OPPORTUNITY_STATE === 'OPEN' && p.case.sideLabel) {
+      openBySide[p.case.sideLabel] = (openBySide[p.case.sideLabel] || 0) + 1;
+    }
+  });
+
+  // Service distribution for open cases
+  const openByService = {};
+  parsed.forEach(p => {
+    if (p.opp.OPPORTUNITY_STATE === 'OPEN') {
+      p.case.serviceTypes.forEach(st => {
+        const label = SERVICE_TYPE_LABELS[st] || st;
+        openByService[label] = (openByService[label] || 0) + 1;
+      });
+    }
+  });
+
+  // Cases opened per month (last 12 months)
+  const monthlyIntake = {};
+  parsed.forEach(p => {
+    if (p.case.year) {
+      const created = new Date(p.opp.DATE_CREATED_UTC);
+      const key = `${created.getFullYear()}-${String(created.getMonth()+1).padStart(2,'0')}`;
+      monthlyIntake[key] = (monthlyIntake[key] || 0) + 1;
+    }
+  });
+
+  // Average cases per month (current year)
+  const currentYearMonths = Object.entries(monthlyIntake)
+    .filter(([k]) => k.startsWith(String(currentYear)))
+    .map(([,v]) => v);
+  const avgMonthlyIntake = currentYearMonths.length > 0
+    ? Math.round(currentYearMonths.reduce((a,b) => a+b, 0) / currentYearMonths.length)
+    : 0;
+
+  const cooMetrics = {
+    openCases: summary.openCases,
+    completedCases: summary.wonCases,
+    completionRate: opportunities.length > 0 ? Math.round(summary.wonCases / summary.totalOpportunities * 100) : 0,
+    openByStage,
+    openByArea,
+    openBySide,
+    openByService,
+    monthlyIntake,
+    avgMonthlyIntake,
+    // Bottleneck: stage with most open cases
+    bottleneckStage: Object.entries(openByStage).sort((a,b) => b[1] - a[1])[0] || null,
+  };
+
+  // CEO metrics
+  const ceoMetrics = {
+    currentYear,
+    prevYear,
+    currentYearCases,
+    prevYearCases,
+    yoyGrowth,
+    pltPct,
+    defPct,
+    topArea: topArea ? { name: topArea[0], count: topArea[1] } : null,
+    concentrationPct,
+    top5Firms: allFirmsList.slice(0, 5).map(f => ({ name: f.name, count: f.count, attorneyCount: f.attorneys ? f.attorneys.size || f.attorneys.length : 0 })),
+    completionRate: opportunities.length > 0 ? Math.round(summary.wonCases / summary.totalOpportunities * 100) : 0,
+  };
+
   return {
     summary,
     casesByArea,
@@ -390,6 +544,10 @@ async function generate() {
     topFirms,
     coldAttorneys,
     newReferrers,
+    vipReferrers,
+    warmingReferrers,
+    ceoMetrics,
+    cooMetrics,
   };
 }
 
