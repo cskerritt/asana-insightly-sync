@@ -45,6 +45,19 @@ function init() {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS action_items (
+      id TEXT PRIMARY KEY,
+      category TEXT NOT NULL,
+      attorney_name TEXT,
+      firm TEXT,
+      email TEXT,
+      description TEXT,
+      completed INTEGER DEFAULT 0,
+      completed_at TEXT,
+      notes TEXT DEFAULT '',
+      created_at TEXT NOT NULL
+    );
   `);
 
   log.info('Database initialized');
@@ -139,8 +152,41 @@ function setState(key, value) {
   ).run(key, value);
 }
 
+// --- Action Items ---
+
+function getActionItems(category) {
+  if (category) {
+    return db.prepare('SELECT * FROM action_items WHERE category = ? ORDER BY completed ASC, created_at DESC').all(category);
+  }
+  return db.prepare('SELECT * FROM action_items ORDER BY completed ASC, created_at DESC').all();
+}
+
+function upsertActionItem(item) {
+  db.prepare(`
+    INSERT INTO action_items (id, category, attorney_name, firm, email, description, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      category = excluded.category,
+      attorney_name = excluded.attorney_name,
+      firm = excluded.firm,
+      email = excluded.email,
+      description = excluded.description
+  `).run(item.id, item.category, item.attorneyName, item.firm, item.email, item.description, new Date().toISOString());
+}
+
+function updateActionItem(id, updates) {
+  if (updates.completed !== undefined) {
+    db.prepare('UPDATE action_items SET completed = ?, completed_at = ? WHERE id = ?')
+      .run(updates.completed ? 1 : 0, updates.completed ? new Date().toISOString() : null, id);
+  }
+  if (updates.notes !== undefined) {
+    db.prepare('UPDATE action_items SET notes = ? WHERE id = ?').run(updates.notes, id);
+  }
+}
+
 module.exports = {
   init, getMapping, setMapping,
   startSyncRun, finishSyncRun, getHistory, getLatestRun,
   getState, setState,
+  getActionItems, upsertActionItem, updateActionItem,
 };

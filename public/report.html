@@ -3,24 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Business Development Report — KWVRS</title>
+  <title>Business Reports — KWVRS</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
     /* === PRINT === */
     @media print {
       .no-print { display: none !important; }
-      body { background: white !important; color: #1a1a2e !important; font-size: 11px; }
+      body { background: white !important; color: #000 !important; font-family: 'Times New Roman', Times, serif !important; font-size: 12pt; }
       .page-break { page-break-before: always; }
-      .card, .summary-card, .action-card, .kpi-card, .exec-insight { box-shadow: none !important; border: 1px solid #ccc !important; background: #f9fafb !important; }
-      .summary-card .value, .kpi-card .kpi-value { background: none !important; -webkit-text-fill-color: #1a1a2e !important; color: #1a1a2e !important; }
-      .header { background: white !important; border-bottom: 2px solid #1a1a2e !important; }
-      .header h1, .section-title { color: #1a1a2e !important; }
-      .header h1 span { color: #2563eb !important; }
-      th, td { color: #333 !important; }
-      .tab-content { display: block !important; page-break-inside: avoid; }
+      .card, .summary-card, .action-card, .kpi-card, .exec-insight, .checklist-item { box-shadow: none !important; border: 1px solid #999 !important; background: white !important; }
+      .summary-card .value, .kpi-card .kpi-value { background: none !important; -webkit-text-fill-color: #000 !important; color: #000 !important; }
+      .header { background: white !important; border-bottom: 2px solid #000 !important; padding: 0.5rem 0 !important; }
+      .header h1 { color: #000 !important; font-family: 'Times New Roman', Times, serif !important; }
+      .header h1 span { color: #000 !important; }
+      .report-for { color: #333 !important; }
+      th, td { color: #000 !important; border-color: #999 !important; }
+      .tab-content { display: block !important; }
       .tab-bar { display: none !important; }
-      .action-card { border-color: #999 !important; }
-      .container { padding: 0.5rem !important; }
+      .container { padding: 0 !important; max-width: none !important; }
+      .action-card { border-left-color: #000 !important; }
+      .badge { border: 1px solid #999 !important; background: #eee !important; color: #000 !important; }
+      .exec-insight .label { color: #333 !important; }
+      .exec-insight .text { color: #000 !important; }
+      h1, h2, h3, h4, .section-title, .kpi-card .kpi-label, .summary-card .label { font-family: 'Times New Roman', Times, serif !important; color: #000 !important; }
+      canvas { max-height: 250px !important; }
+      .checklist-item { page-break-inside: avoid; }
     }
 
     /* === BASE === */
@@ -28,58 +35,60 @@
     body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; -webkit-font-smoothing: antialiased; }
 
     /* === HEADER === */
-    .header { background: linear-gradient(135deg, #1e293b, #0f172a); border-bottom: 1px solid #334155; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
-    .header h1 { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+    .header { background: linear-gradient(135deg, #1e293b, #0f172a); border-bottom: 1px solid #334155; padding: 1.25rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .header h1 { font-size: 1.4rem; font-weight: 700; color: #f8fafc; }
     .header h1 span { color: #38bdf8; font-weight: 400; }
-    .header-sub { color: #64748b; font-size: 0.82rem; margin-top: 0.15rem; }
+    .report-for { color: #94a3b8; font-size: 0.85rem; margin-top: 0.15rem; }
     .header-meta { text-align: right; }
-    .header-meta .date { color: #94a3b8; font-size: 0.9rem; }
+    .header-meta .date { color: #94a3b8; font-size: 0.88rem; }
 
     /* === LAYOUT === */
-    .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
 
-    /* === SUMMARY CARDS === */
+    /* === SUMMARY === */
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
     .summary-card { background: #1e293b; border-radius: 0.75rem; padding: 1rem; text-align: center; border: 1px solid #334155; }
     .summary-card .value { font-size: 1.75rem; font-weight: 800; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .summary-card .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.2rem; }
+    .summary-card .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.15rem; }
     .summary-card.green .value { background: linear-gradient(135deg, #22c55e, #34d399); -webkit-background-clip: text; }
-    .summary-card.red .value { background: linear-gradient(135deg, #ef4444, #f87171); -webkit-background-clip: text; }
-    .summary-card.yellow .value { background: linear-gradient(135deg, #f59e0b, #fbbf24); -webkit-background-clip: text; }
 
     /* === SECTIONS === */
     .section { margin-bottom: 2rem; }
-    .section-title { font-size: 1.1rem; font-weight: 600; color: #f8fafc; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #334155; }
+    .section-title { font-size: 1.05rem; font-weight: 600; color: #f8fafc; margin-bottom: 0.75rem; padding-bottom: 0.4rem; border-bottom: 2px solid #334155; }
 
     /* === CHARTS === */
-    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .card { background: #1e293b; border-radius: 0.75rem; padding: 1.25rem; border: 1px solid #334155; overflow: hidden; }
-    .card h3 { font-size: 0.85rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    .card canvas { max-height: 300px; width: 100% !important; }
+    .card h3 { font-size: 0.82rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .card canvas { max-height: 280px; width: 100% !important; }
     .full-width { grid-column: 1 / -1; }
 
     /* === TABLES === */
-    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -0.25rem; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 600px; }
-    th { text-align: left; padding: 0.6rem 0.6rem; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.05em; border-bottom: 2px solid #334155; white-space: nowrap; }
-    td { padding: 0.55rem 0.6rem; border-bottom: 1px solid rgba(51,65,85,0.5); color: #cbd5e1; }
-    tr:hover td { background: rgba(56, 189, 248, 0.04); }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 500px; }
+    th { text-align: left; padding: 0.55rem 0.6rem; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.04em; border-bottom: 2px solid #334155; white-space: nowrap; }
+    td { padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(51,65,85,0.5); color: #cbd5e1; }
 
-    /* === BADGES & RANKS === */
+    /* === BADGES === */
     .rank { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.65rem; font-weight: 700; flex-shrink: 0; }
     .rank-1 { background: #fbbf24; color: #1a1a2e; } .rank-2 { background: #94a3b8; color: #1a1a2e; } .rank-3 { background: #cd7f32; color: #1a1a2e; } .rank-other { background: #334155; color: #94a3b8; }
     .badge { display: inline-block; padding: 0.12rem 0.45rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 600; margin: 1px; white-space: nowrap; }
-    .badge-blue { background: #1e3a5f; color: #38bdf8; } .badge-green { background: #064e3b; color: #34d399; } .badge-red { background: #450a0a; color: #fca5a5; } .badge-yellow { background: #422006; color: #fbbf24; } .badge-purple { background: #2e1065; color: #a78bfa; }
+    .badge-blue { background: #1e3a5f; color: #38bdf8; } .badge-green { background: #064e3b; color: #34d399; } .badge-red { background: #450a0a; color: #fca5a5; } .badge-purple { background: #2e1065; color: #a78bfa; }
     .bar-inline { height: 6px; border-radius: 3px; background: #334155; min-width: 50px; } .bar-inline-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #38bdf8, #818cf8); }
 
-    /* === ACTION CARDS === */
-    .action-card { background: #1e293b; border: 1px solid #334155; border-left: 4px solid #38bdf8; border-radius: 0 0.75rem 0.75rem 0; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
-    .action-card h4 { color: #f8fafc; font-size: 0.9rem; margin-bottom: 0.35rem; line-height: 1.4; }
-    .action-card p { color: #94a3b8; font-size: 0.82rem; line-height: 1.5; }
-    .action-card .contact-info { color: #38bdf8; font-size: 0.8rem; margin-top: 0.35rem; word-break: break-all; }
-    .action-card .contact-info a { color: #38bdf8; text-decoration: none; }
-    .action-card .contact-info a:hover { text-decoration: underline; }
-    .action-card.cold { border-left-color: #ef4444; } .action-card.new { border-left-color: #22c55e; } .action-card.vip { border-left-color: #fbbf24; } .action-card.warm { border-left-color: #818cf8; }
+    /* === KPI === */
+    .ceo-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+    .kpi-card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1rem; }
+    .kpi-card .kpi-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+    .kpi-card .kpi-value { font-size: 1.8rem; font-weight: 800; color: #f8fafc; margin: 0.1rem 0; }
+    .kpi-card .kpi-sub { font-size: 0.75rem; color: #94a3b8; }
+    .kpi-card .kpi-trend { font-size: 0.8rem; font-weight: 600; }
+    .kpi-card .kpi-trend.up { color: #22c55e; } .kpi-card .kpi-trend.down { color: #ef4444; }
+
+    /* === INSIGHTS === */
+    .exec-insight { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1rem 1.1rem; margin-bottom: 0.6rem; }
+    .exec-insight .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; margin-bottom: 0.15rem; font-weight: 600; }
+    .exec-insight .text { color: #e2e8f0; font-size: 0.85rem; line-height: 1.55; }
 
     /* === BUTTONS === */
     .btn { padding: 0.45rem 1rem; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: background 0.2s; text-decoration: none; display: inline-block; }
@@ -87,230 +96,211 @@
     .btn-secondary { background: #334155; color: #e2e8f0; } .btn-secondary:hover { background: #475569; }
 
     /* === LOADING === */
-    .loading { text-align: center; padding: 3rem 1rem; color: #64748b; font-size: 1rem; }
+    .loading { text-align: center; padding: 3rem 1rem; color: #64748b; }
     .loading .spinner { width: 36px; height: 36px; border: 3px solid #334155; border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* === TABS === */
     .tab-bar { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #334155; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .tab-bar::-webkit-scrollbar { display: none; }
-    .tab { padding: 0.65rem 1rem; cursor: pointer; color: #64748b; font-weight: 500; font-size: 0.85rem; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; white-space: nowrap; user-select: none; -webkit-tap-highlight-color: transparent; min-height: 44px; display: inline-flex; align-items: center; }
+    .tab { padding: 0.65rem 1rem; cursor: pointer; color: #64748b; font-weight: 500; font-size: 0.85rem; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; white-space: nowrap; min-height: 44px; display: inline-flex; align-items: center; user-select: none; -webkit-tap-highlight-color: transparent; }
     .tab:hover { color: #94a3b8; } .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
     .tab-content { display: none; } .tab-content.active { display: block; }
 
-    /* === KPI CARDS === */
-    .ceo-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .kpi-card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.25rem; }
-    .kpi-card .kpi-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
-    .kpi-card .kpi-value { font-size: 2rem; font-weight: 800; color: #f8fafc; margin: 0.15rem 0; word-break: break-word; }
-    .kpi-card .kpi-sub { font-size: 0.78rem; color: #94a3b8; }
-    .kpi-card .kpi-trend { font-size: 0.82rem; font-weight: 600; }
-    .kpi-card .kpi-trend.up { color: #22c55e; } .kpi-card .kpi-trend.down { color: #ef4444; } .kpi-card .kpi-trend.neutral { color: #fbbf24; }
+    /* === CHECKLIST === */
+    .checklist-filter { margin-bottom: 1rem; }
+    .checklist-filter select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.85rem; min-height: 44px; cursor: pointer; }
+    .checklist-item { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1rem 1.25rem; margin-bottom: 0.6rem; display: flex; gap: 0.75rem; align-items: flex-start; transition: opacity 0.3s; }
+    .checklist-item.done { opacity: 0.5; }
+    .checklist-item.done .ci-name { text-decoration: line-through; }
+    .checklist-item input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; cursor: pointer; accent-color: #22c55e; flex-shrink: 0; }
+    .ci-content { flex: 1; min-width: 0; }
+    .ci-name { font-weight: 600; color: #f8fafc; font-size: 0.9rem; }
+    .ci-firm { color: #94a3b8; font-size: 0.82rem; }
+    .ci-action { color: #64748b; font-size: 0.8rem; margin-top: 0.25rem; }
+    .ci-contact { margin-top: 0.3rem; font-size: 0.78rem; }
+    .ci-contact a { color: #38bdf8; text-decoration: none; }
+    .ci-contact a:hover { text-decoration: underline; }
+    .ci-notes { margin-top: 0.4rem; }
+    .ci-notes textarea { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 0.375rem; color: #e2e8f0; padding: 0.4rem 0.6rem; font-size: 0.78rem; font-family: inherit; resize: vertical; min-height: 36px; }
+    .ci-meta { font-size: 0.7rem; color: #475569; margin-top: 0.2rem; }
+    .checklist-stats { display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.82rem; color: #94a3b8; }
+    .checklist-stats strong { color: #f8fafc; }
+    .category-label { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .cat-vip { background: #422006; color: #fbbf24; } .cat-cold { background: #450a0a; color: #fca5a5; } .cat-warm { background: #2e1065; color: #a78bfa; } .cat-new { background: #064e3b; color: #34d399; }
 
-    /* === EXECUTIVE INSIGHTS === */
-    .exec-section { margin-bottom: 2rem; }
-    .exec-section h3 { font-size: 1rem; font-weight: 600; color: #f8fafc; margin-bottom: 0.75rem; }
-    .exec-insight { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
-    .exec-insight .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; margin-bottom: 0.2rem; }
-    .exec-insight .text { color: #e2e8f0; font-size: 0.85rem; line-height: 1.6; }
-
-    /* === MARKETING === */
-    .marketing-category { margin-bottom: 2rem; }
-    .marketing-category h3 { display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; flex-wrap: wrap; }
-    .marketing-category .count-badge { background: #334155; color: #94a3b8; padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.72rem; }
-
-    /* === MOBILE (< 768px) === */
+    /* === MOBILE === */
     @media (max-width: 768px) {
       .header { padding: 1rem; flex-direction: column; align-items: flex-start; }
       .header-meta { text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center; }
-      .header h1 { font-size: 1.25rem; }
+      .header h1 { font-size: 1.2rem; }
       .container { padding: 1rem; }
       .summary-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-      .summary-card { padding: 0.75rem 0.5rem; }
-      .summary-card .value { font-size: 1.35rem; }
+      .summary-card { padding: 0.7rem 0.4rem; }
+      .summary-card .value { font-size: 1.3rem; }
       .summary-card .label { font-size: 0.6rem; }
-      .charts-grid { grid-template-columns: 1fr; gap: 1rem; }
-      .card { padding: 1rem; }
-      .card canvas { max-height: 250px; }
-      .ceo-kpi { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-      .kpi-card { padding: 1rem; }
-      .kpi-card .kpi-value { font-size: 1.5rem; }
-      .kpi-card .kpi-sub { font-size: 0.72rem; }
-      .tab { padding: 0.6rem 0.85rem; font-size: 0.8rem; }
-      .action-card { padding: 0.85rem 1rem; }
-      .action-card h4 { font-size: 0.85rem; }
-      .action-card h4 span { display: block; margin-top: 0.25rem; }
-      .action-card p { font-size: 0.78rem; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .ceo-kpi { grid-template-columns: repeat(2, 1fr); }
+      .kpi-card .kpi-value { font-size: 1.4rem; }
+      .tab { padding: 0.6rem 0.75rem; font-size: 0.78rem; }
       .exec-insight .text { font-size: 0.8rem; }
-      .section-title { font-size: 1rem; }
-      .btn { padding: 0.4rem 0.85rem; font-size: 0.78rem; }
-      table { min-width: 500px; font-size: 0.78rem; }
-      th, td { padding: 0.45rem 0.4rem; }
+      .checklist-item { padding: 0.85rem 1rem; }
     }
-
-    /* === SMALL MOBILE (< 480px) === */
     @media (max-width: 480px) {
       .summary-grid { grid-template-columns: repeat(2, 1fr); }
       .ceo-kpi { grid-template-columns: 1fr; }
-      .header h1 { font-size: 1.1rem; }
     }
   </style>
 </head>
 <body>
 <div class="header">
   <div>
-    <h1>Business Development <span>Report</span></h1>
-    <div class="header-sub">Referral Analytics &mdash; Asana &rarr; Insightly</div>
+    <h1>KWVRS <span>Business Report</span></h1>
+    <div class="report-for" id="report-for">Loading...</div>
   </div>
   <div class="header-meta">
     <div class="date" id="report-date"></div>
-    <div class="no-print" style="margin-top: 0.5rem;">
+    <div class="no-print" style="margin-top:0.5rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
       <button class="btn btn-secondary" onclick="window.print()">Print / PDF</button>
       <a href="/" class="btn btn-secondary">Dashboard</a>
     </div>
   </div>
 </div>
 <div class="container">
-  <div id="loading" class="loading"><div class="spinner"></div>Generating report from Insightly data...</div>
+  <div id="loading" class="loading"><div class="spinner"></div>Loading report data...</div>
   <div id="report" style="display:none;">
     <div class="summary-grid" id="summary-grid"></div>
     <div class="tab-bar no-print">
-      <div class="tab active" onclick="showTab('ceo',this)">CEO Report</div>
-      <div class="tab" onclick="showTab('coo',this)">COO Operations</div>
-      <div class="tab" onclick="showTab('marketing',this)">Marketing Actions</div>
-      <div class="tab" onclick="showTab('overview',this)">Analytics</div>
-      <div class="tab" onclick="showTab('cases',this)">Case Analysis</div>
-      <div class="tab" onclick="showTab('firms',this)">Firms</div>
-      <div class="tab" onclick="showTab('attorneys',this)">Attorneys</div>
+      <div class="tab active" onclick="showTab('ceo',this)">Dan Wolstein — CEO</div>
+      <div class="tab" onclick="showTab('coo',this)">Sharon Hirsh — COO</div>
+      <div class="tab" onclick="showTab('marketing',this)">Scott Wolstein — Marketing</div>
+      <div class="tab" onclick="showTab('analytics',this)">Full Analytics</div>
     </div>
 
-    <!-- CEO REPORT -->
+    <!-- DAN WOLSTEIN — CEO -->
     <div id="tab-ceo" class="tab-content active">
-      <div class="section-title" style="margin-bottom:1.5rem;">Executive Summary</div>
+      <div class="section-title">How is the business doing?</div>
       <div class="ceo-kpi" id="ceo-kpis"></div>
       <div class="charts-grid">
-        <div class="card"><h3>Cases by Year</h3><canvas id="ceo-chart-years"></canvas></div>
-        <div class="card"><h3>Case Portfolio Mix</h3><canvas id="ceo-chart-area"></canvas></div>
+        <div class="card"><h3>Cases Each Year</h3><canvas id="ceo-chart-years"></canvas></div>
+        <div class="card"><h3>What Types of Cases We Handle</h3><canvas id="ceo-chart-area"></canvas></div>
       </div>
       <div id="ceo-insights"></div>
-      <div class="section page-break" style="margin-top:2rem;">
-        <div class="section-title">Top Revenue Sources</div>
-        <div class="card">
-          <div class="table-wrap"><table>
-            <thead><tr><th>#</th><th>Firm</th><th>Cases</th><th>Attorneys</th><th>Trend</th></tr></thead>
-            <tbody id="ceo-firms-table"></tbody>
-          </table></div>
-        </div>
+      <div class="section page-break">
+        <div class="section-title">Where Our Cases Come From — Top Firms</div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>Firm Name</th><th>Cases Sent</th><th>Attorneys</th><th></th></tr></thead>
+          <tbody id="ceo-firms-table"></tbody>
+        </table></div></div>
       </div>
     </div>
 
-    <!-- COO OPERATIONS -->
+    <!-- SHARON HIRSH — COO -->
     <div id="tab-coo" class="tab-content">
-      <div class="section-title" style="margin-bottom:1.5rem;">Operations Dashboard</div>
+      <div class="section-title">What's happening right now?</div>
       <div class="ceo-kpi" id="coo-kpis"></div>
       <div class="charts-grid">
-        <div class="card"><h3>Active Cases by Pipeline Stage</h3><canvas id="coo-chart-stages"></canvas></div>
+        <div class="card"><h3>Where Active Cases Are in the Process</h3><canvas id="coo-chart-stages"></canvas></div>
         <div class="card"><h3>Active Cases by Type</h3><canvas id="coo-chart-area"></canvas></div>
-        <div class="card full-width"><h3>Monthly Case Intake</h3><canvas id="coo-chart-intake" style="max-height:300px;"></canvas></div>
-        <div class="card"><h3>Active — Services Required</h3><canvas id="coo-chart-services"></canvas></div>
-        <div class="card"><h3>Active — Plaintiff vs Defense</h3><canvas id="coo-chart-side"></canvas></div>
+        <div class="card full-width"><h3>How Many New Cases We Get Each Month</h3><canvas id="coo-chart-intake" style="max-height:280px;"></canvas></div>
+        <div class="card"><h3>What Services Active Cases Need</h3><canvas id="coo-chart-services"></canvas></div>
+        <div class="card"><h3>Plaintiff vs Defense — Active Cases</h3><canvas id="coo-chart-side"></canvas></div>
       </div>
       <div id="coo-insights"></div>
     </div>
 
-    <!-- MARKETING ACTIONS -->
+    <!-- SCOTT WOLSTEIN — MARKETING -->
     <div id="tab-marketing" class="tab-content">
-      <div class="section-title" style="margin-bottom:0.5rem;">Marketing Action Plan</div>
-      <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:2rem;">Prioritized contact list with emails and recommended next steps. Click any email to open in your mail client.</p>
-
-      <div class="marketing-category" id="mkt-vip"></div>
-      <div class="marketing-category" id="mkt-cold"></div>
-      <div class="marketing-category" id="mkt-warm"></div>
-      <div class="marketing-category" id="mkt-new"></div>
-    </div>
-
-    <!-- ANALYTICS -->
-    <div id="tab-overview" class="tab-content">
-      <div class="charts-grid">
-        <div class="card"><h3>Cases by Area</h3><canvas id="chart-area"></canvas></div>
-        <div class="card"><h3>Service Types Provided</h3><canvas id="chart-service"></canvas></div>
-        <div class="card"><h3>Plaintiff vs Defense</h3><canvas id="chart-side"></canvas></div>
-        <div class="card"><h3>Cases by Year</h3><canvas id="chart-years"></canvas></div>
-        <div class="card"><h3>Pipeline Status</h3><canvas id="chart-state"></canvas></div>
-        <div class="card"><h3>Pipeline Stage</h3><canvas id="chart-stages"></canvas></div>
+      <div class="section-title">Marketing To-Do List</div>
+      <p style="color:#94a3b8;font-size:0.82rem;margin-bottom:1rem;">These are attorneys and firms we should be reaching out to. Check off items as you complete them. Add notes about what you did.</p>
+      <div class="no-print">
+        <div class="checklist-filter">
+          <select id="filter-category" onchange="renderChecklist()">
+            <option value="all">Show All</option>
+            <option value="vip">VIP — Our Best Referrers (Keep Them Happy)</option>
+            <option value="cold">Gone Cold — Haven't Heard From Them (Re-Engage)</option>
+            <option value="warm">Getting Warmer — Could Become Regulars (Grow)</option>
+            <option value="new">Brand New — Just Sent First Case (Welcome)</option>
+            <option value="done">Completed Items</option>
+          </select>
+        </div>
+        <div class="checklist-stats" id="checklist-stats"></div>
       </div>
+      <div id="checklist"></div>
     </div>
 
-    <!-- CASE ANALYSIS -->
-    <div id="tab-cases" class="tab-content">
+    <!-- FULL ANALYTICS -->
+    <div id="tab-analytics" class="tab-content">
       <div class="charts-grid">
-        <div class="card full-width"><h3>Year-over-Year by Case Area</h3><canvas id="chart-year-area" style="max-height:400px;"></canvas></div>
-        <div class="card"><h3>Plaintiff Services</h3><canvas id="chart-plt-service"></canvas></div>
-        <div class="card"><h3>Defense Services</h3><canvas id="chart-def-service"></canvas></div>
+        <div class="card"><h3>All Cases by Type</h3><canvas id="chart-area"></canvas></div>
+        <div class="card"><h3>Services We Provide</h3><canvas id="chart-service"></canvas></div>
+        <div class="card"><h3>Plaintiff vs Defense — All Cases</h3><canvas id="chart-side"></canvas></div>
+        <div class="card"><h3>Open vs Completed</h3><canvas id="chart-state"></canvas></div>
+        <div class="card full-width"><h3>Cases by Year and Type</h3><canvas id="chart-year-area" style="max-height:350px;"></canvas></div>
       </div>
-    </div>
-
-    <!-- FIRMS -->
-    <div id="tab-firms" class="tab-content">
-      <div class="card">
-        <div class="table-wrap"><table>
-          <thead><tr><th>#</th><th>Firm</th><th>Cases</th><th>Attorneys</th><th>Case Types</th><th>Services</th><th>Volume</th></tr></thead>
+      <div class="section">
+        <div class="section-title">All Top Referring Firms</div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>Firm</th><th>Cases</th><th>Attorneys</th><th>Types</th><th>Services</th><th></th></tr></thead>
           <tbody id="firms-table"></tbody>
-        </table></div>
+        </table></div></div>
+      </div>
+      <div class="section">
+        <div class="section-title">All Top Referring Attorneys</div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>#</th><th>Attorney</th><th>Firm</th><th>Email</th><th>Cases</th><th>Types</th><th></th></tr></thead>
+          <tbody id="attorneys-table"></tbody>
+        </table></div></div>
       </div>
     </div>
 
-    <!-- ATTORNEYS -->
-    <div id="tab-attorneys" class="tab-content">
-      <div class="card">
-        <div class="table-wrap"><table>
-          <thead><tr><th>#</th><th>Attorney</th><th>Firm</th><th>Email</th><th>Cases</th><th>Types</th><th>Volume</th></tr></thead>
-          <tbody id="attorneys-table"></tbody>
-        </table></div>
-      </div>
-    </div>
   </div>
 </div>
 
 <script>
-const COLORS = { blue:'#38bdf8',purple:'#818cf8',green:'#34d399',yellow:'#fbbf24',red:'#f87171',orange:'#fb923c',pink:'#f472b6',teal:'#2dd4bf',indigo:'#a78bfa',slate:'#64748b',cyan:'#22d3ee',lime:'#a3e635',amber:'#f59e0b',rose:'#fb7185' };
-const PALETTE = Object.values(COLORS);
-Chart.defaults.color = '#94a3b8'; Chart.defaults.borderColor = '#334155'; Chart.defaults.font.family = "'Segoe UI', sans-serif";
-document.getElementById('report-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+const COLORS={blue:'#38bdf8',purple:'#818cf8',green:'#34d399',yellow:'#fbbf24',red:'#f87171',orange:'#fb923c',pink:'#f472b6',teal:'#2dd4bf',indigo:'#a78bfa',slate:'#64748b'};
+const PALETTE=Object.values(COLORS);
+Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='#334155';Chart.defaults.font.family="'Segoe UI',sans-serif";
+document.getElementById('report-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-function showTab(name, el) {
+let reportData=null;
+let actionItems=[];
+
+function showTab(name,el){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if(el)el.classList.add('active');
+  const names={ceo:'Report for Dan Wolstein, CEO',coo:'Report for Sharon Hirsh, COO',marketing:'Report for Scott Wolstein, Marketing Director',analytics:'Full Analytics Report'};
+  document.getElementById('report-for').textContent=names[name]||'';
 }
 
-async function loadReport() {
-  const res = await fetch('/api/report');
-  const data = await res.json();
+async function loadReport(){
+  const [res,actRes]=await Promise.all([fetch('/api/report'),fetch('/api/actions')]);
+  reportData=await res.json();
+  actionItems=await actRes.json();
   document.getElementById('loading').style.display='none';
   document.getElementById('report').style.display='block';
-  renderSummary(data.summary);
-  renderCEO(data);
-  renderCOO(data);
-  renderMarketing(data);
-  renderDoughnut('chart-area',data.casesByArea);
-  renderDoughnut('chart-service',data.casesByService);
-  renderDoughnut('chart-side',data.casesBySide,{Plaintiff:COLORS.blue,Defense:COLORS.red,'Not Specified':COLORS.slate});
-  renderBarChart('chart-years',data.casesByYear,true);
-  renderDoughnut('chart-state',data.casesByState,{OPEN:COLORS.blue,WON:COLORS.green});
-  renderHorizontalBar('chart-stages',data.casesByStage);
-  renderYearByArea('chart-year-area',data.yearByArea);
-  renderServiceBySide('chart-plt-service',data.serviceBySide['Plaintiff']||{});
-  renderServiceBySide('chart-def-service',data.serviceBySide['Defense']||{});
-  renderFirmsTable(data.topFirms);
-  renderAttorneysTable(data.topAttorneys);
+  document.getElementById('report-for').textContent='Report for Dan Wolstein, CEO';
+  renderSummary(reportData.summary);
+  renderCEO(reportData);
+  renderCOO(reportData);
+  renderChecklist();
+  renderDoughnut('chart-area',reportData.casesByArea);
+  renderDoughnut('chart-service',reportData.casesByService);
+  renderDoughnut('chart-side',reportData.casesBySide,{Plaintiff:COLORS.blue,Defense:COLORS.red,'Not Specified':COLORS.slate});
+  renderDoughnut('chart-state',reportData.casesByState,{OPEN:COLORS.blue,WON:COLORS.green});
+  renderYearByArea('chart-year-area',reportData.yearByArea);
+  renderFirmsTable(reportData.topFirms);
+  renderAttorneysTable(reportData.topAttorneys);
+  // Sync action items if none exist
+  if(!actionItems.length){await fetch('/api/actions/sync',{method:'POST'});const r2=await fetch('/api/actions');actionItems=await r2.json();renderChecklist();}
 }
 
-function renderSummary(s) {
-  document.getElementById('summary-grid').innerHTML = [
+function renderSummary(s){
+  document.getElementById('summary-grid').innerHTML=[
     {v:s.totalOpportunities,l:'Total Cases'},
-    {v:s.openCases,l:'Open'},
+    {v:s.openCases,l:'Active Now'},
     {v:s.wonCases,l:'Completed'},
     {v:s.uniqueAttorneys,l:'Attorneys'},
     {v:s.uniqueFirms,l:'Firms'},
@@ -318,246 +308,123 @@ function renderSummary(s) {
   ].map(c=>`<div class="summary-card ${c.c||''}"><div class="value">${typeof c.v==='number'?c.v.toLocaleString():c.v}</div><div class="label">${c.l}</div></div>`).join('');
 }
 
-// === CEO TAB ===
-function renderCEO(data) {
-  const m = data.ceoMetrics;
-  const s = data.summary;
-  const trendIcon = m.yoyGrowth > 0 ? '&#9650;' : m.yoyGrowth < 0 ? '&#9660;' : '&#9644;';
-  const trendClass = m.yoyGrowth > 0 ? 'up' : m.yoyGrowth < 0 ? 'down' : 'neutral';
-
-  document.getElementById('ceo-kpis').innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-label">Total Cases (All Time)</div>
-      <div class="kpi-value">${s.totalOpportunities.toLocaleString()}</div>
-      <div class="kpi-sub">${s.openCases} active &bull; ${s.wonCases} completed</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">${m.currentYear} Cases (YTD)</div>
-      <div class="kpi-value">${m.currentYearCases}</div>
-      <div class="kpi-trend ${trendClass}">${trendIcon} ${Math.abs(m.yoyGrowth)}% vs ${m.prevYear} (${m.prevYearCases})</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Completion Rate</div>
-      <div class="kpi-value">${m.completionRate}%</div>
-      <div class="kpi-sub">${s.wonCases} of ${s.totalOpportunities} cases completed</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Plaintiff / Defense Split</div>
-      <div class="kpi-value">${m.pltPct}/${m.defPct}</div>
-      <div class="kpi-sub">Balanced portfolio</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Referral Network</div>
-      <div class="kpi-value">${s.uniqueFirms}</div>
-      <div class="kpi-sub">${s.uniqueAttorneys} attorneys across ${s.uniqueFirms} firms</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Top 5 Firm Concentration</div>
-      <div class="kpi-value">${m.concentrationPct}%</div>
-      <div class="kpi-sub">${m.concentrationPct > 30 ? 'Moderate concentration — consider diversifying' : 'Well diversified referral base'}</div>
-    </div>
+// === CEO ===
+function renderCEO(data){
+  const m=data.ceoMetrics,s=data.summary;
+  const trend=m.yoyGrowth>0?'&#9650;':'&#9660;';
+  const tc=m.yoyGrowth>=0?'up':'down';
+  document.getElementById('ceo-kpis').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">All Cases Ever</div><div class="kpi-value">${s.totalOpportunities.toLocaleString()}</div><div class="kpi-sub">${s.openCases} still active, ${s.wonCases} done</div></div>
+    <div class="kpi-card"><div class="kpi-label">This Year (${m.currentYear})</div><div class="kpi-value">${m.currentYearCases}</div><div class="kpi-trend ${tc}">${trend} ${Math.abs(m.yoyGrowth)}% compared to last year (${m.prevYearCases})</div></div>
+    <div class="kpi-card"><div class="kpi-label">How Many We Finish</div><div class="kpi-value">${m.completionRate}%</div><div class="kpi-sub">of all cases get completed</div></div>
+    <div class="kpi-card"><div class="kpi-label">Plaintiff / Defense</div><div class="kpi-value">${m.pltPct}% / ${m.defPct}%</div><div class="kpi-sub">Good balance means less risk</div></div>
+    <div class="kpi-card"><div class="kpi-label">How Many Firms Send Us Work</div><div class="kpi-value">${s.uniqueFirms}</div><div class="kpi-sub">${s.uniqueAttorneys} individual attorneys</div></div>
+    <div class="kpi-card"><div class="kpi-label">Top 5 Firms = What % of Cases</div><div class="kpi-value">${m.concentrationPct}%</div><div class="kpi-sub">${m.concentrationPct>30?'We rely on a few big firms — could be risky':'Well spread out — healthy'}</div></div>
   `;
-
-  // CEO charts
-  renderBarChart('ceo-chart-years', data.casesByYear, true);
-  renderDoughnut('ceo-chart-area', data.casesByArea);
-
-  // Insights
-  const topArea = m.topArea ? m.topArea.name : 'N/A';
-  const topAreaPct = m.topArea ? Math.round(m.topArea.count / s.totalOpportunities * 100) : 0;
-  document.getElementById('ceo-insights').innerHTML = `
-    <div class="exec-section">
-      <h3>Key Insights</h3>
-      <div class="exec-insight">
-        <div class="label">Business Mix</div>
-        <div class="text">${topArea} represents ${topAreaPct}% of all cases (${m.topArea?m.topArea.count:0} cases). Matrimonial and Employment together account for the remaining specialized work. The plaintiff/defense split of ${m.pltPct}/${m.defPct} indicates a balanced practice serving both sides.</div>
-      </div>
-      <div class="exec-insight">
-        <div class="label">Growth Trajectory</div>
-        <div class="text">${m.yoyGrowth >= 0 ? `Case volume is ${m.yoyGrowth > 0 ? 'up' : 'flat'} ${Math.abs(m.yoyGrowth)}% year-over-year (${m.currentYearCases} in ${m.currentYear} vs ${m.prevYearCases} in ${m.prevYear}).` : `Case volume declined ${Math.abs(m.yoyGrowth)}% (${m.currentYearCases} in ${m.currentYear} vs ${m.prevYearCases} in ${m.prevYear}). Review marketing efforts and referral outreach.`}</div>
-      </div>
-      <div class="exec-insight">
-        <div class="label">Referral Concentration</div>
-        <div class="text">The top 5 firms account for ${m.concentrationPct}% of referred cases. ${m.concentrationPct > 30 ? 'This creates some dependency risk. Expanding relationships with mid-tier referrers would improve resilience.' : 'The referral base is well-diversified across many firms, reducing dependency risk.'}</div>
-      </div>
-      <div class="exec-insight">
-        <div class="label">Service Portfolio</div>
-        <div class="text">Vocational Evaluations remain the primary service. Life Care Plans are a strong secondary line. Economics and Loss of Household Services represent growth opportunities for cross-selling to existing referral relationships.</div>
-      </div>
-    </div>
+  renderBarChart('ceo-chart-years',data.casesByYear,true);
+  renderDoughnut('ceo-chart-area',data.casesByArea);
+  const topArea=m.topArea?m.topArea.name:'N/A';
+  const topPct=m.topArea?Math.round(m.topArea.count/s.totalOpportunities*100):0;
+  document.getElementById('ceo-insights').innerHTML=`
+    <div class="section-title">What This Means</div>
+    <div class="exec-insight"><div class="label">Our Main Business</div><div class="text">${topArea} makes up ${topPct}% of everything we do (${m.topArea?m.topArea.count:0} cases). Matrimonial and Employment are our two other big areas. We work about equally for plaintiffs (${m.pltPct}%) and defense (${m.defPct}%), which is healthy because it means we're not dependent on one side.</div></div>
+    <div class="exec-insight"><div class="label">Are We Growing?</div><div class="text">${m.yoyGrowth>=0?`Yes — we have ${m.currentYearCases} cases so far in ${m.currentYear}, which is ${m.yoyGrowth}% more than the ${m.prevYearCases} we had at this point in ${m.prevYear}.`:`We're down ${Math.abs(m.yoyGrowth)}% compared to last year (${m.currentYearCases} vs ${m.prevYearCases}). We should look at whether marketing needs a boost.`}</div></div>
+    <div class="exec-insight"><div class="label">Who Sends Us the Most Work?</div><div class="text">Our top 5 firms account for ${m.concentrationPct}% of all referred cases. ${m.concentrationPct>30?'That means we depend heavily on a few relationships. If one of those firms stops referring, it would hurt. Scott should be working to bring in more firms.':'Our work comes from many different firms, so we\'re not too dependent on any one source. That\'s good.'}</div></div>
   `;
-
-  // CEO top firms
-  document.getElementById('ceo-firms-table').innerHTML = m.top5Firms.map((f,i) => `
-    <tr>
-      <td>${rankBadge(i)}</td>
-      <td><strong>${f.name}</strong></td>
-      <td>${f.count}</td>
-      <td>${f.attorneyCount}</td>
-      <td>${barInline(f.count, m.top5Firms[0].count)}</td>
-    </tr>
-  `).join('');
+  const max=m.top5Firms[0]?.count||1;
+  document.getElementById('ceo-firms-table').innerHTML=m.top5Firms.map((f,i)=>`<tr><td>${rankBadge(i)}</td><td><strong>${f.name}</strong></td><td>${f.count}</td><td>${f.attorneyCount}</td><td>${barInline(f.count,max)}</td></tr>`).join('');
 }
 
-// === COO TAB ===
-function renderCOO(data) {
-  const c = data.cooMetrics;
-  const s = data.summary;
-  const bn = c.bottleneckStage;
-
-  document.getElementById('coo-kpis').innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-label">Active Cases</div>
-      <div class="kpi-value">${c.openCases}</div>
-      <div class="kpi-sub">Currently in pipeline</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Completed Cases</div>
-      <div class="kpi-value">${c.completedCases}</div>
-      <div class="kpi-sub">${c.completionRate}% completion rate</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Avg Monthly Intake (${data.ceoMetrics.currentYear})</div>
-      <div class="kpi-value">${c.avgMonthlyIntake}</div>
-      <div class="kpi-sub">Cases per month this year</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Plt / Def Active Split</div>
-      <div class="kpi-value">${c.openBySide.Plaintiff} / ${c.openBySide.Defense}</div>
-      <div class="kpi-sub">Active plaintiff vs defense cases</div>
-    </div>
-    ${bn ? `<div class="kpi-card">
-      <div class="kpi-label">Pipeline Bottleneck</div>
-      <div class="kpi-value" style="font-size:1.5rem;">${bn[0]}</div>
-      <div class="kpi-sub">${bn[1]} cases at this stage</div>
-    </div>` : ''}
+// === COO ===
+function renderCOO(data){
+  const c=data.cooMetrics,s=data.summary;
+  const bn=c.bottleneckStage;
+  document.getElementById('coo-kpis').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">Cases We're Working On Now</div><div class="kpi-value">${c.openCases}</div><div class="kpi-sub">Currently in the pipeline</div></div>
+    <div class="kpi-card"><div class="kpi-label">Cases We've Finished</div><div class="kpi-value">${c.completedCases}</div><div class="kpi-sub">${c.completionRate}% completion rate overall</div></div>
+    <div class="kpi-card"><div class="kpi-label">New Cases Per Month (${data.ceoMetrics.currentYear})</div><div class="kpi-value">${c.avgMonthlyIntake}</div><div class="kpi-sub">Average this year</div></div>
+    <div class="kpi-card"><div class="kpi-label">Active: Plaintiff / Defense</div><div class="kpi-value">${c.openBySide.Plaintiff} / ${c.openBySide.Defense}</div><div class="kpi-sub">Balance of current workload</div></div>
+    ${bn?`<div class="kpi-card"><div class="kpi-label">Busiest Stage Right Now</div><div class="kpi-value" style="font-size:1.2rem">${bn[0]}</div><div class="kpi-sub">${bn[1]} cases sitting here</div></div>`:''}
   `;
-
-  renderHorizontalBar('coo-chart-stages', c.openByStage);
-  renderDoughnut('coo-chart-area', c.openByArea);
-  renderDoughnut('coo-chart-services', c.openByService);
-  renderDoughnut('coo-chart-side', c.openBySide, {Plaintiff:COLORS.blue, Defense:COLORS.red});
-
-  // Monthly intake chart
-  const months = Object.keys(c.monthlyIntake).sort().slice(-12);
-  new Chart(document.getElementById('coo-chart-intake'), {
-    type: 'line',
-    data: {
-      labels: months.map(m => { const [y,mo]=m.split('-'); return new Date(y,mo-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'}); }),
-      datasets: [{
-        label: 'Cases Opened',
-        data: months.map(m => c.monthlyIntake[m]),
-        borderColor: COLORS.blue,
-        backgroundColor: 'rgba(56,189,248,0.1)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 4,
-        pointBackgroundColor: COLORS.blue,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
-    }
-  });
-
-  // COO insights
-  const stageEntries = Object.entries(c.openByStage).sort((a,b) => b[1] - a[1]);
-  document.getElementById('coo-insights').innerHTML = `
-    <div class="exec-section">
-      <h3>Operational Insights</h3>
-      <div class="exec-insight">
-        <div class="label">Pipeline Health</div>
-        <div class="text">${c.openCases} cases are currently active with a ${c.completionRate}% overall completion rate. ${bn ? `The "${bn[0]}" stage has the most cases (${bn[1]}), which may indicate a capacity constraint or normal accumulation point.` : ''}</div>
-      </div>
-      <div class="exec-insight">
-        <div class="label">Intake Volume</div>
-        <div class="text">Averaging ${c.avgMonthlyIntake} new cases per month in ${data.ceoMetrics.currentYear}. ${c.avgMonthlyIntake > 30 ? 'High intake volume — ensure staffing keeps pace.' : c.avgMonthlyIntake > 15 ? 'Steady intake volume.' : 'Lower intake — may need marketing push.'}</div>
-      </div>
-      <div class="exec-insight">
-        <div class="label">Workload Balance</div>
-        <div class="text">Active cases split: ${c.openBySide.Plaintiff} plaintiff, ${c.openBySide.Defense} defense. ${Math.abs(c.openBySide.Plaintiff - c.openBySide.Defense) > 20 ? 'Significant imbalance — check if team capacity matches the heavier side.' : 'Relatively balanced workload across both sides.'}</div>
-      </div>
-      ${stageEntries.length > 1 ? `<div class="exec-insight">
-        <div class="label">Stage Distribution</div>
-        <div class="text">Top stages: ${stageEntries.slice(0,3).map(([s,n]) => `${s} (${n})`).join(', ')}. Review cases stuck at early stages for potential follow-up actions.</div>
-      </div>` : ''}
-    </div>
+  renderHorizontalBar('coo-chart-stages',c.openByStage);
+  renderDoughnut('coo-chart-area',c.openByArea);
+  renderDoughnut('coo-chart-services',c.openByService);
+  renderDoughnut('coo-chart-side',c.openBySide,{Plaintiff:COLORS.blue,Defense:COLORS.red});
+  const months=Object.keys(c.monthlyIntake).sort().slice(-12);
+  new Chart(document.getElementById('coo-chart-intake'),{type:'line',data:{labels:months.map(m=>{const[y,mo]=m.split('-');return new Date(y,mo-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});}),datasets:[{label:'New Cases',data:months.map(m=>c.monthlyIntake[m]),borderColor:COLORS.blue,backgroundColor:'rgba(56,189,248,0.1)',fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:COLORS.blue}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
+  const stages=Object.entries(c.openByStage).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('coo-insights').innerHTML=`
+    <div class="section-title">What This Means for Operations</div>
+    <div class="exec-insight"><div class="label">Workload</div><div class="text">We have ${c.openCases} cases in progress right now. We're getting about ${c.avgMonthlyIntake} new cases each month. ${c.avgMonthlyIntake>30?'That\'s a lot — make sure the team has enough capacity.':c.avgMonthlyIntake>15?'Steady volume.':'Intake is a bit slow — marketing may need to step up.'}</div></div>
+    <div class="exec-insight"><div class="label">Where Cases Are Piling Up</div><div class="text">${bn?`The "${bn[0]}" stage has the most cases (${bn[1]}). This might mean we need more resources there, or cases are waiting on something.`:'Cases are spread evenly across stages.'} ${stages.length>1?`Other busy stages: ${stages.slice(1,3).map(([s,n])=>s+' ('+n+')').join(', ')}.`:''}</div></div>
+    <div class="exec-insight"><div class="label">Team Balance</div><div class="text">Active cases split: ${c.openBySide.Plaintiff} plaintiff, ${c.openBySide.Defense} defense. ${Math.abs(c.openBySide.Plaintiff-c.openBySide.Defense)>20?'There\'s an imbalance — check if staffing matches the heavier side.':'Fairly balanced across both sides.'}</div></div>
   `;
 }
 
-// === MARKETING TAB ===
-function renderMarketing(data) {
-  renderMarketingCategory('mkt-vip', 'VIP Referrers — Protect & Deepen', data.vipReferrers, 'vip', '#fbbf24',
-    'These are your highest-value relationships. Priority: retention, gratitude, and asking for introductions to colleagues.',
-    a => `<em>Action:</em> Schedule quarterly lunch/dinner. Send case outcome updates. Ask for introductions to other attorneys at their firm.`
-  );
-  renderMarketingCategory('mkt-cold', 'Gone Cold — Re-Engage', data.coldAttorneys, 'cold', '#ef4444',
-    'Previously active referrers who haven\'t sent a case in 90+ days. These already know your work — a simple check-in can reactivate them.',
-    a => { const days = Math.floor((new Date()-new Date(a.lastReferral))/86400000); return `<em>Action:</em> Personal call or email. "${a.name}, we enjoyed working on the ${a.cases[a.cases.length-1]} matter. Wanted to check in — anything we can help with?" <span class="badge badge-red">${days} days since last referral</span>`; }
-  );
-  renderMarketingCategory('mkt-warm', 'Warming Up — Grow the Relationship', data.warmingReferrers, 'warm', '#818cf8',
-    'Attorneys who\'ve referred 2-4 times recently. They like your work — invest in making them regular referrers.',
-    a => `<em>Action:</em> Send a thank-you note. Share a relevant article or CLE invite. Add to newsletter list.`
-  );
-  renderMarketingCategory('mkt-new', 'First-Time Referrers — Make a Great Impression', data.newReferrers.slice(0,20), 'new', '#22c55e',
-    'These attorneys just sent their first case. The next 30 days determine if they become repeat referrers.',
-    a => `<em>Action:</em> Send a thank-you within 48 hours. After report delivery, follow up: "How did the ${a.cases[0]} report work for your case?"`
-  );
-}
-
-function renderMarketingCategory(containerId, title, list, cardClass, color, description, actionFn) {
-  const el = document.getElementById(containerId);
-  if (!list || !list.length) {
-    el.innerHTML = `<h3 style="color:${color}">${title} <span class="count-badge">0</span></h3><div class="action-card"><p>No contacts in this category.</p></div>`;
-    return;
-  }
-  el.innerHTML = `
-    <h3 style="color:${color}">${title} <span class="count-badge">${list.length}</span></h3>
-    <p style="color:#64748b;font-size:0.82rem;margin-bottom:1rem;">${description}</p>
-    ${list.map(a => `
-      <div class="action-card ${cardClass}">
-        <h4>${a.name} &mdash; <span style="color:#94a3b8;font-weight:400;">${a.firm}</span> <span class="badge badge-blue">${a.count} case${a.count>1?'s':''}</span></h4>
-        <p>${actionFn(a)}</p>
-        <div class="contact-info">
-          ${a.email ? `<a href="mailto:${a.email}">${a.email}</a>` : '<span style="color:#475569">No email on file</span>'}
-          ${a.phone ? ` &bull; ${a.phone}` : ''}
-          ${Object.keys(a.caseTypes||{}).filter(k=>k!=='Unknown').length ? ' &bull; '+Object.entries(a.caseTypes).filter(([k])=>k!=='Unknown').map(([k,v])=>`<span class="badge badge-blue">${k}</span>`).join('') : ''}
+// === MARKETING CHECKLIST ===
+function renderChecklist(){
+  const filter=document.getElementById('filter-category')?.value||'all';
+  let items=actionItems;
+  if(filter==='done')items=items.filter(i=>i.completed);
+  else if(filter!=='all')items=items.filter(i=>i.category===filter&&!i.completed);
+  else items=[...items.filter(i=>!i.completed),...items.filter(i=>i.completed)];
+  const total=actionItems.length;
+  const done=actionItems.filter(i=>i.completed).length;
+  document.getElementById('checklist-stats').innerHTML=`<span><strong>${done}</strong> of <strong>${total}</strong> completed</span><span>${total-done} remaining</span>`;
+  const catLabels={vip:'VIP',cold:'Gone Cold',warm:'Getting Warmer',new:'Brand New'};
+  const catClasses={vip:'cat-vip',cold:'cat-cold',warm:'cat-warm',new:'cat-new'};
+  const catActions={
+    vip:'Schedule a lunch, call, or send a thank-you. Keep this relationship strong.',
+    cold:'Call or email to reconnect. They know us — just need a reminder.',
+    warm:'Send a thank-you note, share an article, or invite to a CLE. Build the relationship.',
+    new:'Send a thank-you within 48 hours. Follow up after we deliver the report.'
+  };
+  document.getElementById('checklist').innerHTML=items.length?items.map(item=>`
+    <div class="checklist-item ${item.completed?'done':''}">
+      <input type="checkbox" ${item.completed?'checked':''} onchange="toggleItem('${item.id}',this.checked)">
+      <div class="ci-content">
+        <div class="ci-name">${item.attorney_name} <span class="category-label ${catClasses[item.category]||''}">${catLabels[item.category]||item.category}</span></div>
+        <div class="ci-firm">${item.firm}</div>
+        <div class="ci-action">${catActions[item.category]||item.description}</div>
+        <div class="ci-contact">
+          ${item.email?`Email: <a href="mailto:${item.email}">${item.email}</a>`:'No email on file'}
         </div>
+        <div class="ci-notes no-print">
+          <textarea placeholder="Add notes (e.g., 'Called 4/9, left voicemail')" onchange="saveNotes('${item.id}',this.value)">${item.notes||''}</textarea>
+        </div>
+        ${item.completed_at?`<div class="ci-meta">Completed ${new Date(item.completed_at).toLocaleDateString()}</div>`:''}
       </div>
-    `).join('')}
-  `;
+    </div>
+  `).join(''):'<p style="color:#64748b;text-align:center;padding:2rem;">No items in this category. Try changing the filter above.</p>';
+}
+
+async function toggleItem(id,checked){
+  await fetch('/api/actions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({completed:checked})});
+  const item=actionItems.find(i=>i.id===id);
+  if(item){item.completed=checked?1:0;item.completed_at=checked?new Date().toISOString():null;}
+  renderChecklist();
+}
+
+async function saveNotes(id,notes){
+  await fetch('/api/actions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes})});
+  const item=actionItems.find(i=>i.id===id);
+  if(item)item.notes=notes;
 }
 
 // === CHART HELPERS ===
-function renderDoughnut(id,data,colorMap){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);new Chart(document.getElementById(id),{type:'doughnut',data:{labels:s.map(x=>x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:colorMap?s.map((x,i)=>colorMap[x[0]]||PALETTE[i%PALETTE.length]):PALETTE,borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{padding:12,usePointStyle:true,font:{size:11}}}}}});}
+function renderDoughnut(id,data,colorMap){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);new Chart(document.getElementById(id),{type:'doughnut',data:{labels:s.map(x=>x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:colorMap?s.map((x,i)=>colorMap[x[0]]||PALETTE[i%PALETTE.length]):PALETTE,borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{padding:10,usePointStyle:true,font:{size:11}}}}}});}
 function renderBarChart(id,data,filterUnknown){let l=Object.keys(data);if(filterUnknown)l=l.filter(k=>k!=='Unknown');l.sort();new Chart(document.getElementById(id),{type:'bar',data:{labels:l,datasets:[{label:'Cases',data:l.map(k=>data[k]),backgroundColor:'rgba(56,189,248,0.7)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});}
-function renderHorizontalBar(id,data){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(x=>x[0].length>30?x[0].slice(0,30)+'...':x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}}});}
+function renderHorizontalBar(id,data){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]);new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(x=>x[0].length>28?x[0].slice(0,28)+'...':x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}}});}
 function renderYearByArea(id,yba){const yrs=Object.keys(yba).filter(y=>y!=='null').sort();const areas=new Set();yrs.forEach(y=>Object.keys(yba[y]).forEach(a=>areas.add(a)));const a=[...areas].filter(x=>x!=='Unknown');const ds=a.map((area,i)=>({label:area,data:yrs.map(y=>yba[y][area]||0),backgroundColor:PALETTE[i%PALETTE.length],borderRadius:4}));new Chart(document.getElementById(id),{type:'bar',data:{labels:yrs,datasets:ds},options:{responsive:true,plugins:{legend:{position:'top',labels:{usePointStyle:true,font:{size:11}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true}}}});}
-function renderServiceBySide(id,data){const s=Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,8);if(!s.length){document.getElementById(id).parentElement.innerHTML+='<p style="color:#64748b;text-align:center">No data</p>';return;}new Chart(document.getElementById(id),{type:'bar',data:{labels:s.map(x=>x[0].length>25?x[0].slice(0,25)+'...':x[0]),datasets:[{data:s.map(x=>x[1]),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}}});}
-function rankBadge(i){return `<span class="rank ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other'}">${i+1}</span>`;}
-function barInline(v,max){return `<div class="bar-inline"><div class="bar-inline-fill" style="width:${max>0?(v/max*100):0}%"></div></div>`;}
+function rankBadge(i){return`<span class="rank ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other'}">${i+1}</span>`;}
+function barInline(v,max){return`<div class="bar-inline"><div class="bar-inline-fill" style="width:${max>0?(v/max*100):0}%"></div></div>`;}
 function badges(obj,cls){return Object.entries(obj).filter(([k])=>k!=='Unknown'&&k!=='Not Specified').map(([k,v])=>`<span class="badge ${cls}">${k}: ${v}</span>`).join(' ');}
-
 function renderFirmsTable(firms){const max=firms[0]?.count||1;document.getElementById('firms-table').innerHTML=firms.map((f,i)=>`<tr><td>${rankBadge(i)}</td><td><strong>${f.name}</strong></td><td>${f.count}</td><td>${f.attorneyCount}</td><td>${badges(f.caseTypes,'badge-blue')}</td><td>${badges(f.services,'badge-purple')}</td><td>${barInline(f.count,max)}</td></tr>`).join('');}
-function renderAttorneysTable(atts){const max=atts[0]?.count||1;document.getElementById('attorneys-table').innerHTML=atts.map((a,i)=>`<tr><td>${rankBadge(i)}</td><td><strong>${a.name}</strong></td><td>${a.firm}</td><td>${a.email?`<a href="mailto:${a.email}" style="color:#38bdf8">${a.email}</a>`:'<span style="color:#475569">—</span>'}</td><td>${a.count}</td><td>${badges(a.caseTypes,'badge-blue')}</td><td>${barInline(a.count,max)}</td></tr>`).join('');}
+function renderAttorneysTable(atts){const max=atts[0]?.count||1;document.getElementById('attorneys-table').innerHTML=atts.map((a,i)=>`<tr><td>${rankBadge(i)}</td><td><strong>${a.name}</strong></td><td>${a.firm}</td><td>${a.email?`<a href="mailto:${a.email}" style="color:#38bdf8">${a.email}</a>`:'—'}</td><td>${a.count}</td><td>${badges(a.caseTypes,'badge-blue')}</td><td>${barInline(a.count,max)}</td></tr>`).join('');}
 
 loadReport();
-
-// Resize charts for print layout
-window.addEventListener('beforeprint', () => {
-  document.querySelectorAll('canvas').forEach(c => {
-    const chart = Chart.getChart(c);
-    if (chart) chart.resize();
-  });
-});
-window.addEventListener('afterprint', () => {
-  document.querySelectorAll('canvas').forEach(c => {
-    const chart = Chart.getChart(c);
-    if (chart) chart.resize();
-  });
-});
+window.addEventListener('beforeprint',()=>{document.querySelectorAll('canvas').forEach(c=>{const ch=Chart.getChart(c);if(ch)ch.resize();});});
+window.addEventListener('afterprint',()=>{document.querySelectorAll('canvas').forEach(c=>{const ch=Chart.getChart(c);if(ch)ch.resize();});});
 </script>
 </body>
 </html>

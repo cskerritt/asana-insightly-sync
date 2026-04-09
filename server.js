@@ -58,6 +58,51 @@ app.get('/api/report', async (req, res) => {
   }
 });
 
+// Parse JSON bodies
+app.use(express.json());
+
+// API: action items
+app.get('/api/actions', (req, res) => {
+  const category = req.query.category || null;
+  res.json(db.getActionItems(category));
+});
+
+app.put('/api/actions/:id', (req, res) => {
+  db.updateActionItem(req.params.id, req.body);
+  res.json({ ok: true });
+});
+
+app.post('/api/actions/sync', async (req, res) => {
+  try {
+    const data = await report.generate();
+    // Sync marketing action items to DB
+    const categories = [
+      { key: 'vip', list: data.vipReferrers, desc: 'VIP — schedule quarterly check-in, send case updates, ask for referrals to colleagues' },
+      { key: 'cold', list: data.coldAttorneys, desc: 'Re-engage — personal call or email to reconnect' },
+      { key: 'warm', list: data.warmingReferrers, desc: 'Growing — send thank-you, share article or CLE invite' },
+      { key: 'new', list: data.newReferrers, desc: 'New — send thank-you within 48 hours, follow up after report delivery' },
+    ];
+    let count = 0;
+    for (const cat of categories) {
+      for (const a of cat.list) {
+        db.upsertActionItem({
+          id: `${cat.key}-${a.name}-${a.firm}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+          category: cat.key,
+          attorneyName: a.name,
+          firm: a.firm,
+          email: a.email || '',
+          description: cat.desc,
+        });
+        count++;
+      }
+    }
+    res.json({ synced: count });
+  } catch (err) {
+    log.error('Action sync failed', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Schedule sync
 const interval = process.env.SYNC_INTERVAL || '*/15 * * * *';
 if (cron.validate(interval)) {
