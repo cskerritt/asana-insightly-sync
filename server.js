@@ -7,6 +7,7 @@ const insightly = require('./src/insightly');
 const db = require('./src/db');
 const sync = require('./src/sync');
 const log = require('./src/logger');
+const attorneys = require('./src/attorneys');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -116,6 +117,88 @@ app.post('/api/actions/sync', async (req, res) => {
     res.json({ synced: count });
   } catch (err) {
     log.error('Action sync failed', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Attorney Lead Finder ---
+
+app.get('/api/attorneys', (req, res) => {
+  const filters = {};
+  if (req.query.state) filters.state = req.query.state;
+  if (req.query.practice_area) filters.practiceArea = req.query.practice_area;
+  res.json(db.getAttorneys(filters));
+});
+
+app.get('/api/attorneys/stats', (req, res) => {
+  res.json(db.getAttorneyStats());
+});
+
+app.get('/api/attorneys/coverage', (req, res) => {
+  res.json(db.getCoverageGrid());
+});
+
+app.get('/api/attorneys/search-log', (req, res) => {
+  res.json(db.getSearchLog());
+});
+
+app.get('/api/attorneys/practice-areas', (req, res) => {
+  res.json(attorneys.PRACTICE_AREAS);
+});
+
+app.get('/api/attorneys/states', (req, res) => {
+  const states = Object.entries(attorneys.STATE_NAMES).map(([code, name]) => ({ code, name }));
+  res.json(states);
+});
+
+app.post('/api/attorneys/search', async (req, res) => {
+  const { state, practiceArea, forceRerun } = req.body;
+  if (!state || !practiceArea) {
+    return res.status(400).json({ error: 'state and practiceArea are required' });
+  }
+
+  if (!forceRerun) {
+    const existing = db.hasSearched(state, practiceArea, 'avvo');
+    if (existing) {
+      return res.json({
+        alreadySearched: true,
+        searchedAt: existing.searched_at,
+        resultCount: existing.result_count,
+      });
+    }
+  }
+
+  // Run async — return immediately, search in background
+  const logId = db.createSearchLog(state, practiceArea, 'avvo');
+  res.json({ message: 'Search started', logId });
+
+  // Background execution (after response sent)
+  try {
+    log.info(`Starting attorney search: ${state} / ${practiceArea}`);
+    const records = await attorneys.scrapeAvvo(state, practiceArea);
+    let newCount = 0;
+    for (const record of records) {
+      const result = db.upsertAttorney(record);
+      if (result.created) newCount++;
+    }
+    db.updateSearchLog(logId, 'completed', records.length);
+    log.info(`Attorney search complete: ${records.length} found, ${newCount} new`);
+  } catch (err) {
+    log.error(`Attorney search failed: ${state} / ${practiceArea}`, err.message);
+    db.updateSearchLog(logId, 'failed', 0);
+  }
+});
+
+app.post('/api/attorneys/push', async (req, res) => {
+  const { attorneyIds } = req.body;
+  if (!attorneyIds || !attorneyIds.length) {
+    return res.status(400).json({ error: 'attorneyIds required' });
+  }
+  try {
+    const result = await attorneys.pushToInsightly(attorneyIds);
+    res.json(result);
+  } catch (err) {
+    log.error('Attorney push to Insightly failed', err.message);
     res.status(500).json({ error: err.message });
   }
 });
