@@ -236,8 +236,13 @@ function parsePhone(details) {
 function parseOpposingCounsel(details) {
   if (!details) return null;
   const match = details.match(/Opposing\s+Counsel\s*:\s*(.+)/i);
-  if (match) return match[1].replace(/,?\s*Esq\.?$/i, '').trim() || null;
-  return null;
+  if (!match) return null;
+  let name = match[1].replace(/,?\s*Esq\.?$/i, '').trim();
+  if (!name || name.length < 2) return null;
+  // Filter field labels that got captured
+  if (/^(Email|E|T|Firm|Direct|Phone|Address|N\/A)\s*[:@]/i.test(name)) return null;
+  if (/^(N\/A|TBD|None|Unknown)$/i.test(name)) return null;
+  return name;
 }
 
 // Parse opposing firm
@@ -267,8 +272,14 @@ function parseParalegal(details) {
   if (!details) return null;
   const match = details.match(/Para\s*:\s*(.+)/i);
   if (!match) return null;
-  const name = match[1].trim();
+  let name = match[1].trim();
   if (!name) return null;
+  // Filter out false positives — field labels that follow Para:
+  const junkPatterns = /^(T|E|Direct|Tel|Phone|Email|Firm|Fax|Main|O|C|Cell|Mobile|Address|Opposing|Client|Interview|Due|Court|Case)\s*:/i;
+  if (junkPatterns.test(name)) return null;
+  // Remove trailing asterisks and clean
+  name = name.replace(/\*+$/, '').trim();
+  if (name.length < 2) return null;
   // Find para email
   const lines = details.split('\n');
   let foundPara = false;
