@@ -17,7 +17,7 @@ async function fetchAllTasks(assigneeGid, workspaceGid) {
   let params = {
     assignee: assigneeGid,
     workspace: workspaceGid,
-    opt_fields: 'name,completed,completed_at,created_at,due_on,modified_at,projects.name',
+    opt_fields: 'name,completed,completed_at,created_at,due_on,modified_at,projects.name,custom_fields.name,custom_fields.display_value,custom_fields.type,custom_fields.number_value,custom_fields.enum_value.name,custom_fields.people_value.name',
     limit: 100,
   };
   while (url) {
@@ -54,9 +54,50 @@ async function generate() {
         const tasks = await fetchAllTasks(user.gid, ws.gid);
         if (tasks.length < 3) continue; // Skip users with barely any tasks
 
+        // Extract custom fields
+        function getCF(task, fieldName) {
+          if (!task.custom_fields) return null;
+          const f = task.custom_fields.find(cf => cf.name === fieldName);
+          if (!f) return null;
+          if (f.enum_value) return f.enum_value.name;
+          if (f.display_value) return f.display_value;
+          if (f.number_value !== null && f.number_value !== undefined) return f.number_value;
+          if (f.people_value && f.people_value.length) return f.people_value.map(p => p.name).join(', ');
+          return null;
+        }
+
         const completed = tasks.filter(t => t.completed);
         const open = tasks.filter(t => !t.completed);
         const overdue = open.filter(t => t.due_on && new Date(t.due_on) < now);
+
+        // Priority breakdown
+        const byPriority = { High: 0, Medium: 0, Low: 0, None: 0 };
+        open.forEach(t => {
+          const p = getCF(t, 'Priority') || 'None';
+          byPriority[p] = (byPriority[p] || 0) + 1;
+        });
+        const highPriorityOverdue = overdue.filter(t => getCF(t, 'Priority') === 'High').length;
+
+        // Estimated vs actual time
+        let totalEstimated = 0, totalActual = 0, estimateCount = 0;
+        completed.forEach(t => {
+          const est = getCF(t, 'Estimated time');
+          if (est && t.created_at && t.completed_at) {
+            const actual = (new Date(t.completed_at) - new Date(t.created_at)) / 86400000;
+            totalEstimated += est;
+            totalActual += actual;
+            estimateCount++;
+          }
+        });
+        const estimateAccuracy = estimateCount > 0
+          ? Math.round(totalEstimated / totalActual * 100)
+          : null;
+
+        // Percent allocation
+        const allocation = open.reduce((sum, t) => {
+          const pct = getCF(t, 'Percent allocation');
+          return sum + (pct || 0);
+        }, 0);
         const dueSoon = open.filter(t => {
           if (!t.due_on) return false;
           const due = new Date(t.due_on);
@@ -109,6 +150,7 @@ async function generate() {
             name: t.name,
             dueOn: t.due_on,
             daysOverdue: Math.round((now - new Date(t.due_on)) / 86400000),
+            priority: getCF(t, 'Priority') || 'None',
           }))
           .sort((a, b) => b.daysOverdue - a.daysOverdue);
 
@@ -123,6 +165,7 @@ async function generate() {
         if (completionRate < 50 && tasks.length > 10) concerns.push(`${completionRate}% completion rate`);
         const unassignedPct = byProject['Unassigned'] ? Math.round(byProject['Unassigned'].total / tasks.length * 100) : 0;
         if (unassignedPct > 80 && tasks.length > 10) concerns.push(`${unassignedPct}% tasks not in projects`);
+        if (highPriorityOverdue > 0) concerns.push(`${highPriorityOverdue} HIGH priority overdue`);
 
         teamData.push({
           name: user.name,
@@ -144,6 +187,11 @@ async function generate() {
           overdueList: overdueList.slice(0, 10),
           concerns,
           hasConcerns: concerns.length > 0,
+          // Custom field data
+          byPriority,
+          highPriorityOverdue,
+          allocation,
+          estimateAccuracy,
         });
       } catch (err) {
         // Skip users we can't fetch

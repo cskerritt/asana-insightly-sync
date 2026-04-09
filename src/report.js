@@ -695,6 +695,137 @@ async function generate() {
   });
   crossSellOpps.sort((a, b) => b.count - a.count);
 
+  // === NEW: Pipeline Stage Timing ===
+  // How long cases sit at each pipeline stage
+  const stageTiming = {};
+  stages.forEach(s => {
+    const casesAtStage = opportunities.filter(o => o.STAGE_ID === s.STAGE_ID && o.OPPORTUNITY_STATE === 'OPEN');
+    if (casesAtStage.length > 0) {
+      const avgDays = Math.round(casesAtStage.reduce((sum, o) => {
+        return sum + (now - new Date(o.DATE_UPDATED_UTC)) / 86400000;
+      }, 0) / casesAtStage.length);
+      stageTiming[s.STAGE_NAME] = { count: casesAtStage.length, avgDaysAtStage: avgDays, pipelineId: s.PIPELINE_ID };
+    }
+  });
+
+  // === NEW: Revenue Forecasting ===
+  // Standard fee estimates by service type
+  const SERVICE_FEES = {
+    'Vocational Evaluation': 5500,
+    'Life Care Plan': 7500,
+    'Economics': 6000,
+    'Loss of Household Services': 4500,
+    'Consulting Medical Exam': 3500,
+    'Independent Medical Exam': 3000,
+    'Records Review': 2000,
+    'Rebuttal': 3000,
+    'Critique': 2500,
+    'Affidavit': 1500,
+  };
+  let estimatedOpenRevenue = 0;
+  let estimatedCompletedRevenue = 0;
+  let currentYearRevenue = 0;
+  parsed.forEach(p => {
+    let caseFee = 0;
+    if (p.case.serviceLabels.length > 0) {
+      p.case.serviceLabels.forEach(s => { caseFee += SERVICE_FEES[s] || 3000; });
+    } else {
+      caseFee = 4000; // default estimate
+    }
+    if (p.opp.OPPORTUNITY_STATE === 'OPEN') estimatedOpenRevenue += caseFee;
+    else estimatedCompletedRevenue += caseFee;
+    if (p.case.year === currentYear) currentYearRevenue += caseFee;
+  });
+
+  // Revenue by year
+  const revenueByYear = {};
+  parsed.forEach(p => {
+    if (!p.case.year) return;
+    let fee = 0;
+    if (p.case.serviceLabels.length > 0) {
+      p.case.serviceLabels.forEach(s => { fee += SERVICE_FEES[s] || 3000; });
+    } else {
+      fee = 4000;
+    }
+    revenueByYear[p.case.year] = (revenueByYear[p.case.year] || 0) + fee;
+  });
+
+  // === NEW: Referral-to-Completion Cycle ===
+  const cycleTimes = {};
+  parsed.forEach(p => {
+    if (p.firm && p.opp.OPPORTUNITY_STATE === 'WON' && p.opp.ACTUAL_CLOSE_DATE) {
+      const created = new Date(p.opp.DATE_CREATED_UTC);
+      const closed = new Date(p.opp.ACTUAL_CLOSE_DATE);
+      const days = Math.round((closed - created) / 86400000);
+      if (days > 0 && days < 1000) {
+        if (!cycleTimes[p.firm]) cycleTimes[p.firm] = { firm: p.firm, times: [], count: 0 };
+        cycleTimes[p.firm].times.push(days);
+        cycleTimes[p.firm].count++;
+      }
+    }
+  });
+  const firmCycleTimes = Object.values(cycleTimes)
+    .filter(f => f.count >= 3)
+    .map(f => ({
+      firm: f.firm,
+      count: f.count,
+      avgDays: Math.round(f.times.reduce((a, b) => a + b, 0) / f.times.length),
+      fastest: Math.round(Math.min(...f.times)),
+      slowest: Math.round(Math.max(...f.times)),
+    }))
+    .sort((a, b) => a.avgDays - b.avgDays);
+
+  // Overall cycle time
+  const allCycleTimes = Object.values(cycleTimes).flatMap(f => f.times);
+  const overallAvgCycle = allCycleTimes.length
+    ? Math.round(allCycleTimes.reduce((a, b) => a + b, 0) / allCycleTimes.length)
+    : 0;
+
+  // === NEW: Seasonal Patterns ===
+  const monthlyReferrals = {};
+  parsed.forEach(p => {
+    const created = new Date(p.opp.DATE_CREATED_UTC);
+    const monthKey = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}`;
+    monthlyReferrals[monthKey] = (monthlyReferrals[monthKey] || 0) + 1;
+  });
+
+  // Average by month of year (Jan=1, Dec=12)
+  const seasonalAvg = {};
+  const seasonalCounts = {};
+  parsed.forEach(p => {
+    const month = new Date(p.opp.DATE_CREATED_UTC).getMonth() + 1;
+    const monthName = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month];
+    if (!seasonalCounts[monthName]) seasonalCounts[monthName] = [];
+    seasonalCounts[monthName].push(1);
+  });
+  // Group by year first to get per-year-month counts, then average
+  const yearMonthCounts = {};
+  parsed.forEach(p => {
+    const d = new Date(p.opp.DATE_CREATED_UTC);
+    const ym = `${d.getFullYear()}-${d.getMonth()}`;
+    yearMonthCounts[ym] = (yearMonthCounts[ym] || 0) + 1;
+  });
+  const monthTotals = {};
+  const monthYearCount = {};
+  Object.entries(yearMonthCounts).forEach(([ym, count]) => {
+    const month = parseInt(ym.split('-')[1]);
+    const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month];
+    monthTotals[monthName] = (monthTotals[monthName] || 0) + count;
+    monthYearCount[monthName] = (monthYearCount[monthName] || 0) + 1;
+  });
+  const seasonal = {};
+  Object.entries(monthTotals).forEach(([month, total]) => {
+    seasonal[month] = Math.round(total / (monthYearCount[month] || 1));
+  });
+
+  const revenueMetrics = {
+    estimatedOpenRevenue,
+    estimatedCompletedRevenue,
+    currentYearRevenue,
+    revenueByYear,
+    totalEstimatedRevenue: estimatedOpenRevenue + estimatedCompletedRevenue,
+  };
+
   // CEO metrics
   const ceoMetrics = {
     currentYear,
@@ -734,6 +865,13 @@ async function generate() {
     opposingCounselLeads,
     paralegalList,
     crossSellOpps,
+    // Business intelligence
+    stageTiming,
+    revenueMetrics,
+    firmCycleTimes,
+    overallAvgCycle,
+    seasonal,
+    monthlyReferrals,
   };
 }
 

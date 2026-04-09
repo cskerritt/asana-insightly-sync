@@ -187,6 +187,14 @@
         <div class="card"><h3>What Types of Cases We Handle</h3><canvas id="ceo-chart-area"></canvas></div>
       </div>
       <div id="ceo-insights"></div>
+      <div class="section">
+        <div class="section-title">Revenue Estimates</div>
+        <div class="ceo-kpi" id="ceo-revenue"></div>
+        <div class="charts-grid">
+          <div class="card"><h3>Estimated Revenue by Year</h3><canvas id="ceo-chart-revenue"></canvas></div>
+          <div class="card"><h3>When Do Referrals Come In? (Seasonal)</h3><canvas id="ceo-chart-seasonal"></canvas></div>
+        </div>
+      </div>
       <div class="section page-break">
         <div class="section-title">Where Our Cases Come From — Top Firms</div>
         <div class="card"><div class="table-wrap"><table>
@@ -206,6 +214,20 @@
         <div class="card full-width"><h3>How Many New Cases We Get Each Month</h3><canvas id="coo-chart-intake" style="max-height:280px;"></canvas></div>
         <div class="card"><h3>What Services Active Cases Need</h3><canvas id="coo-chart-services"></canvas></div>
         <div class="card"><h3>Plaintiff vs Defense — Active Cases</h3><canvas id="coo-chart-side"></canvas></div>
+      </div>
+      <div class="section">
+        <div class="section-title">How Long Cases Sit at Each Stage</div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Stage</th><th>Cases</th><th>Avg Days at This Stage</th></tr></thead>
+          <tbody id="coo-stage-timing"></tbody>
+        </table></div></div>
+      </div>
+      <div class="section">
+        <div class="section-title">How Fast Do Firms' Cases Move? (Referral to Completion)</div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>Firm</th><th>Completed</th><th>Avg Days</th><th>Fastest</th><th>Slowest</th></tr></thead>
+          <tbody id="coo-cycle-times"></tbody>
+        </table></div></div>
       </div>
       <div id="coo-insights"></div>
     </div>
@@ -401,6 +423,25 @@ function renderCEO(data){
   `;
   const max=m.top5Firms[0]?.count||1;
   document.getElementById('ceo-firms-table').innerHTML=m.top5Firms.map((f,i)=>`<tr><td>${rankBadge(i)}</td><td><strong>${f.name}</strong></td><td>${f.count}</td><td>${f.attorneyCount}</td><td>${barInline(f.count,max)}</td></tr>`).join('');
+
+  // Revenue
+  const rev=data.revenueMetrics;
+  function fmtMoney(n){return '$'+Math.round(n).toLocaleString();}
+  document.getElementById('ceo-revenue').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">Open Pipeline Value</div><div class="kpi-value" style="font-size:1.5rem">${fmtMoney(rev.estimatedOpenRevenue)}</div><div class="kpi-sub">${s.openCases} active cases</div></div>
+    <div class="kpi-card"><div class="kpi-label">Completed Revenue</div><div class="kpi-value" style="font-size:1.5rem">${fmtMoney(rev.estimatedCompletedRevenue)}</div><div class="kpi-sub">${s.wonCases} completed cases</div></div>
+    <div class="kpi-card"><div class="kpi-label">${m.currentYear} Revenue (YTD)</div><div class="kpi-value" style="font-size:1.5rem">${fmtMoney(rev.currentYearRevenue)}</div><div class="kpi-sub">Based on service type estimates</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg Case Turnaround</div><div class="kpi-value">${data.overallAvgCycle} days</div><div class="kpi-sub">Referral to completion</div></div>
+  `;
+
+  // Revenue by year chart
+  const revYears=Object.keys(rev.revenueByYear).filter(k=>k!=='null').sort();
+  new Chart(document.getElementById('ceo-chart-revenue'),{type:'bar',data:{labels:revYears,datasets:[{label:'Revenue',data:revYears.map(y=>rev.revenueByYear[y]),backgroundColor:'rgba(34,197,94,0.7)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+Math.round(v/1000)+'k'}},x:{grid:{display:false}}}}});
+
+  // Seasonal chart
+  const monthOrder=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const seasonalData=data.seasonal||{};
+  new Chart(document.getElementById('ceo-chart-seasonal'),{type:'bar',data:{labels:monthOrder,datasets:[{label:'Avg Cases',data:monthOrder.map(m=>seasonalData[m]||0),backgroundColor:'rgba(56,189,248,0.7)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
 }
 
 // === COO ===
@@ -420,6 +461,19 @@ function renderCOO(data){
   renderDoughnut('coo-chart-side',c.openBySide,{Plaintiff:COLORS.blue,Defense:COLORS.red});
   const months=Object.keys(c.monthlyIntake).sort().slice(-12);
   new Chart(document.getElementById('coo-chart-intake'),{type:'line',data:{labels:months.map(m=>{const[y,mo]=m.split('-');return new Date(y,mo-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});}),datasets:[{label:'New Cases',data:months.map(m=>c.monthlyIntake[m]),borderColor:COLORS.blue,backgroundColor:'rgba(56,189,248,0.1)',fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:COLORS.blue}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
+
+  // Stage timing table
+  const stData=data.stageTiming||{};
+  document.getElementById('coo-stage-timing').innerHTML=Object.entries(stData).sort((a,b)=>b[1].avgDaysAtStage-a[1].avgDaysAtStage).map(([name,d])=>`
+    <tr><td>${name}</td><td>${d.count}</td><td style="${d.avgDaysAtStage>30?'color:#f59e0b;font-weight:600':''}">${d.avgDaysAtStage} days</td></tr>
+  `).join('')||'<tr><td colspan="3" style="color:#64748b">No stage timing data yet</td></tr>';
+
+  // Cycle times table
+  const cycles=data.firmCycleTimes||[];
+  document.getElementById('coo-cycle-times').innerHTML=cycles.slice(0,15).map(f=>`
+    <tr><td><strong>${f.firm}</strong></td><td>${f.count}</td><td>${f.avgDays} days</td><td style="color:#22c55e">${f.fastest}d</td><td style="color:#ef4444">${f.slowest}d</td></tr>
+  `).join('')||'<tr><td colspan="5" style="color:#64748b">No cycle time data yet</td></tr>';
+
   const stages=Object.entries(c.openByStage).sort((a,b)=>b[1]-a[1]);
   document.getElementById('coo-insights').innerHTML=`
     <div class="section-title">What This Means for Operations</div>
@@ -538,7 +592,7 @@ function showProdDetail(idx){
     overdueHtml=`<div class="section" style="margin-top:1rem">
       <h3 style="color:#ef4444;font-size:0.9rem;margin-bottom:0.5rem">Overdue Tasks</h3>
       ${m.overdueList.map(t=>`<div class="action-card cold" style="padding:0.75rem 1rem">
-        <strong>${t.name}</strong> — due ${t.dueOn} <span class="badge badge-red">${t.daysOverdue} days overdue</span>
+        <strong>${t.name}</strong> — due ${t.dueOn} <span class="badge badge-red">${t.daysOverdue} days overdue</span>${t.priority&&t.priority!=='None'?` <span class="badge ${t.priority==='High'?'badge-red':'badge-purple'}">${t.priority}</span>`:''}
       </div>`).join('')}
     </div>`;
   }
@@ -567,6 +621,14 @@ function showProdDetail(idx){
         <div class="kpi-card"><div class="kpi-label">Avg Days to Complete</div><div class="kpi-value">${m.avgDays}</div><div class="kpi-sub">Median: ${m.medianDays} days</div></div>
         <div class="kpi-card"><div class="kpi-label">Last 30 Days</div><div class="kpi-value">${m.completed30}</div><div class="kpi-sub">tasks completed</div></div>
         <div class="kpi-card"><div class="kpi-label">Last 90 Days</div><div class="kpi-value">${m.completed90}</div><div class="kpi-sub">tasks completed</div></div>
+        <div class="kpi-card"><div class="kpi-label">Workload Allocation</div><div class="kpi-value">${m.allocation||0}%</div><div class="kpi-sub">total percent allocation</div></div>
+        ${m.estimateAccuracy?`<div class="kpi-card"><div class="kpi-label">Estimate Accuracy</div><div class="kpi-value">${m.estimateAccuracy}%</div><div class="kpi-sub">${m.estimateAccuracy>100?'Overestimates time':'Underestimates time'}</div></div>`:''}
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
+        <span class="badge badge-red">High: ${m.byPriority?.High||0}</span>
+        <span class="badge badge-purple">Medium: ${m.byPriority?.Medium||0}</span>
+        <span class="badge badge-blue">Low: ${m.byPriority?.Low||0}</span>
+        <span style="color:#64748b;font-size:0.75rem">open tasks by priority</span>
       </div>
       ${m.concerns.length?`<div class="exec-insight" style="border-left:3px solid #ef4444"><div class="label" style="color:#ef4444">Concerns</div><div class="text">${m.concerns.join(' &bull; ')}</div></div>`:''}
       <div class="card" style="margin-top:1rem;background:#0f172a"><h3>Monthly Completions (Last 6 Months)</h3><canvas id="prod-chart-${idx}" style="max-height:200px"></canvas></div>
