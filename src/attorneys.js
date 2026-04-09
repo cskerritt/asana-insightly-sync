@@ -52,7 +52,12 @@ async function scrapeAvvo(state, practiceAreaSlug) {
 
   let browser;
   try {
-    browser = await chromium.launch({ headless: false });
+    browser = await chromium.launch({
+      headless: process.env.NODE_ENV === 'production',
+      args: process.env.NODE_ENV === 'production'
+        ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        : [],
+    });
     const page = await browser.newPage();
 
     log.info(`Navigating to Avvo: ${searchUrl}`);
