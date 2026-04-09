@@ -70,6 +70,6 @@ if (cron.validate(interval)) {
   log.error(`Invalid cron expression: ${interval}`);
 }
 
-app.listen(PORT, () => {
-  log.info(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  log.info(`Server running on port ${PORT}`);
 });
