@@ -58,6 +58,35 @@ function init() {
       notes TEXT DEFAULT '',
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS attorneys (
+      id TEXT PRIMARY KEY,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      firm_name TEXT DEFAULT '',
+      firm_address TEXT,
+      state TEXT NOT NULL,
+      practice_areas TEXT,
+      source TEXT NOT NULL,
+      source_url TEXT,
+      insightly_contact_id INTEGER,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_attorney_dedup
+      ON attorneys(first_name, last_name, state, firm_name);
+
+    CREATE TABLE IF NOT EXISTS attorney_search_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      state TEXT NOT NULL,
+      practice_area TEXT NOT NULL,
+      source TEXT NOT NULL,
+      searched_at TEXT NOT NULL,
+      result_count INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'in_progress'
+    );
   `);
 
   log.info('Database initialized');
@@ -184,9 +213,101 @@ function updateActionItem(id, updates) {
   }
 }
 
+// --- Attorneys ---
+
+function upsertAttorney(record) {
+  const id = record.id || require('crypto').randomUUID();
+  const existing = db.prepare(
+    'SELECT * FROM attorneys WHERE first_name = ? AND last_name = ? AND state = ? AND firm_name = ?'
+  ).get(record.firstName, record.lastName, record.state, record.firmName || '');
+
+  if (existing) {
+    const updates = {};
+    if (record.email && !existing.email) updates.email = record.email;
+    if (record.phone && !existing.phone) updates.phone = record.phone;
+    if (record.firmAddress && !existing.firm_address) updates.firm_address = record.firmAddress;
+    if (Object.keys(updates).length > 0) {
+      const sets = Object.entries(updates).map(([k]) => `${k} = ?`).join(', ');
+      const vals = Object.values(updates);
+      db.prepare(`UPDATE attorneys SET ${sets} WHERE id = ?`).run(...vals, existing.id);
+    }
+    return { created: false, id: existing.id };
+  }
+
+  db.prepare(`
+    INSERT INTO attorneys (id, first_name, last_name, email, phone, firm_name, firm_address, state, practice_areas, source, source_url, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, record.firstName, record.lastName, record.email || null, record.phone || null,
+    record.firmName || '', record.firmAddress || null, record.state,
+    JSON.stringify(record.practiceAreas || []), record.source, record.sourceUrl || '',
+    new Date().toISOString()
+  );
+  return { created: true, id };
+}
+
+function getAttorneys(filters = {}) {
+  let sql = 'SELECT * FROM attorneys WHERE 1=1';
+  const params = [];
+  if (filters.state) { sql += ' AND state = ?'; params.push(filters.state); }
+  if (filters.practiceArea) { sql += ' AND practice_areas LIKE ?'; params.push(`%${filters.practiceArea}%`); }
+  sql += ' ORDER BY last_name, first_name';
+  return db.prepare(sql).all(...params);
+}
+
+function getAttorneyById(id) {
+  return db.prepare('SELECT * FROM attorneys WHERE id = ?').get(id);
+}
+
+function setAttorneyInsightlyId(id, contactId) {
+  db.prepare('UPDATE attorneys SET insightly_contact_id = ? WHERE id = ?').run(contactId, id);
+}
+
+function getAttorneyStats() {
+  const total = db.prepare('SELECT COUNT(*) as count FROM attorneys').get().count;
+  const pushed = db.prepare('SELECT COUNT(*) as count FROM attorneys WHERE insightly_contact_id IS NOT NULL').get().count;
+  const statesCovered = db.prepare(
+    "SELECT COUNT(DISTINCT state) as count FROM attorney_search_log WHERE status = 'completed'"
+  ).get().count;
+  return { total, pushed, statesCovered };
+}
+
+function getCoverageGrid() {
+  return db.prepare(
+    "SELECT state, practice_area, result_count, searched_at FROM attorney_search_log WHERE status = 'completed' ORDER BY searched_at DESC"
+  ).all();
+}
+
+function getSearchLog() {
+  return db.prepare('SELECT * FROM attorney_search_log ORDER BY searched_at DESC').all();
+}
+
+function hasSearched(state, practiceArea, source) {
+  return db.prepare(
+    "SELECT * FROM attorney_search_log WHERE state = ? AND practice_area = ? AND source = ? AND status = 'completed' ORDER BY searched_at DESC LIMIT 1"
+  ).get(state, practiceArea, source) || null;
+}
+
+function createSearchLog(state, practiceArea, source) {
+  const result = db.prepare(
+    'INSERT INTO attorney_search_log (state, practice_area, source, searched_at) VALUES (?, ?, ?, ?)'
+  ).run(state, practiceArea, source, new Date().toISOString());
+  return result.lastInsertRowid;
+}
+
+function updateSearchLog(id, status, resultCount) {
+  db.prepare(
+    'UPDATE attorney_search_log SET status = ?, result_count = ? WHERE id = ?'
+  ).run(status, resultCount, id);
+}
+
 module.exports = {
   init, getMapping, setMapping,
   startSyncRun, finishSyncRun, getHistory, getLatestRun,
   getState, setState,
   getActionItems, upsertActionItem, updateActionItem,
+  // Attorneys
+  upsertAttorney, getAttorneys, getAttorneyById, setAttorneyInsightlyId,
+  getAttorneyStats, getCoverageGrid, getSearchLog,
+  hasSearched, createSearchLog, updateSearchLog,
 };
