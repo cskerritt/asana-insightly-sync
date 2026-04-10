@@ -52,7 +52,7 @@ async function generate() {
     for (const user of usersRes.data.data) {
       try {
         const tasks = await fetchAllTasks(user.gid, ws.gid);
-        if (tasks.length < 3) continue; // Skip users with barely any tasks
+        if (tasks.length === 0) continue; // Skip users with no tasks
 
         // Extract custom fields
         function getCF(task, fieldName) {
